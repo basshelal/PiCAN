@@ -1,0 +1,9 @@
+rules:
+  - id: can-frame-unchecked-data-access
+    message: "Accessing can_frame data without checking cand_dlc length!"
+    severity: ERROR
+    patterns:
+      - pattern: $FRAME.data[$INDEX]
+      - pattern-not-inside: |
+          if ($FRAME.can_dlc > $INDEX) { ... }
+    languages: [cpp]

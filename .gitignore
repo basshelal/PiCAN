@@ -1,0 +1,4 @@
+# CMake Build Artifacts
+build/
+cmake-build-*/
+.idea/

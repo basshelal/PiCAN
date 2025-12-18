@@ -1,0 +1,59 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 30,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "debug-config",
+      "displayName": "debug configure preset",
+      "binaryDir": "${sourceDir}/build/debug",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug-app",
+      "displayName": "debug build preset for app (no tests)",
+      "targets": [
+        "PiCAN"
+      ],
+      "configurePreset": "debug-config"
+    },
+    {
+      "name": "debug-test",
+      "displayName": "debug build preset for tests",
+      "targets": [
+        "PiCAN_Test"
+      ],
+      "configurePreset": "debug-config"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "debug",
+      "displayName": "debug workflow",
+      "description": "runs configure and build with the preset debug-app",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug-config"
+        },
+        {
+          "type": "build",
+          "name": "debug-app"
+        },
+        {
+          "type": "build",
+          "name": "debug-test"
+        }
+      ]
+    }
+  ]
+}

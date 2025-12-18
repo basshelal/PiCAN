@@ -1,0 +1,31 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  cppcoreguidelines-*,
+  hicpp-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -cppcoreguidelines-pro-type-vararg,
+  -modernize-use-trailing-return-type,
+  -modernize-use-auto,
+  -readability-magic-numbers,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-use-default-member-init,
+  -hicpp-no-assembler,
+  -readability-redundant-access-specifiers
+
+WarningsAsErrors: "*"
+
+CheckOptions:
+  - key: cppcoreguidelines-pro-type-member-init.IgnoreArrays
+    value: 'false'
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: "_f"
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+...
