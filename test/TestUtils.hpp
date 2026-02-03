@@ -5,8 +5,6 @@
 
 #include <gtest/gtest.h>
 
-#include "core/Types.hpp"
-
 #define ASSERT_NULL(pointer) ASSERT_EQ(nullptr, pointer)
 #define ASSERT_NOT_NULL(pointer) ASSERT_NE(nullptr, pointer)
 
@@ -14,3 +12,5 @@
 #define ASSERT_NOT_EQUAL(val1, val2) ASSERT_NE(val1, val2)
 
 #define FAIL_TEST(Message) GTEST_FAIL() << (Message)
+
+#define TEST(testName) GTEST_TEST(TEST_SUITE_NAME, testName)

@@ -18,6 +18,7 @@ Checks: >
   -cppcoreguidelines-use-default-member-init,
   -hicpp-no-assembler,
   -readability-redundant-access-specifiers
+  -misc-include-cleaner
 
 WarningsAsErrors: "*"
 

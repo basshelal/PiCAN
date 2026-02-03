@@ -39,3 +39,7 @@ require_command() {
         exit 1
     fi
 }
+
+echo_error() {
+    printf "\033[0;31m%s\n\033[0m" "$*" >&2
+}

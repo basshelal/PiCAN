@@ -27,7 +27,7 @@ else ()
     message("Not using mold linker")
 endif ()
 
-add_compile_options(-Wall -Werror -pedantic)
+add_compile_options(-Wall -Werror -pedantic -Wno-interference-size)
 
 # CPM for package/dependency management, see: https://github.com/cpm-cmake/CPM.cmake
 include(cmake/CPM.cmake)
@@ -37,13 +37,6 @@ CPMAddPackage(
         NAME fmt
         GITHUB_REPOSITORY fmtlib/fmt
         GIT_TAG 12.1.0
-)
-
-# spdlog: logging
-CPMAddPackage(
-        NAME spdlog
-        GITHUB_REPOSITORY gabime/spdlog
-        GIT_TAG v1.16.0
 )
 
 # magic_enum: Better enums
@@ -61,9 +54,9 @@ CPMAddPackage(
         OPTIONS "INSTALL_GTEST OFF" "gtest_force_shared_crt ON"
 )
 
-# Qt6, needs to be installed on system using package manager or Qt installer, thus not managed by
-# CPM
-find_package(Qt6 COMPONENTS Core Gui Qml Quick Widgets REQUIRED)
+# libbacktrace
+find_path(LIBBACKTRACE_INCLUDE_DIR backtrace.h)
+find_library(LIBBACKTRACE_LIB backtrace)
 
 add_subdirectory(src)
 
@@ -135,3 +128,20 @@ if (SEMGREP_EXE)
 else ()
     message(FATAL_ERROR "semgrep not found!")
 endif ()
+
+# Make git use .githooks/ as its git hooks directory, this way,
+# our hooks are tracked in git and can run out of the box after a git clone
+find_package(Git)
+if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+            COMMAND ${GIT_EXECUTABLE} config core.hooksPath .githooks
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            RESULT_VARIABLE GIT_CONFIG_RESULT
+    )
+
+    if(GIT_CONFIG_RESULT EQUAL 0)
+        message(STATUS "Git Hooks successfully configured to use '.githooks/'")
+    else()
+        message(WARNING "Failed to configure Git Hooks.")
+    endif()
+endif()

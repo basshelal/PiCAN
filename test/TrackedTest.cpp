@@ -1,8 +1,8 @@
-#include "core/Types.hpp"
+#include "test/Heap.hpp"
 #include "test/TestUtils.hpp"
 #include "test/Tracked.hpp"
 
-#define TEST(testName) GTEST_TEST(TrackedTest, testName)
+#define TEST_SUITE_NAME Tracked
 
 TEST(argument_constructor) {
     const std::string data{"element"};

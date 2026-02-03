@@ -6,7 +6,6 @@ Work in progress
 
 `cmake` (and a generator like `ninja` preferred or `make`)
 `gcc`
-Qt6 installed on the system
 `mold` linker optionally for better link times
 `clang-format`
 `clang-tidy`
@@ -16,13 +15,12 @@ Qt6 installed on the system
 
 ## Dependencies
 
-All managed using `cpm`
+All managed using `cpm` except `libbacktrace`
 
 ## Structure
 
 
-
-## Checks (MISRA C++)
+## Checks (MISRA C++) Static Analysis Pipeline
 
 clang-format
 clang-tidy

@@ -25,6 +25,6 @@ for dir in $DIRS; do
 done
 
 if [ "$success" == "false" ]; then
-    echo "Files need formatting!" 1>&2
+    echo_error "Files need formatting!"
     exit 1
 fi

@@ -218,6 +218,7 @@ SpaceBeforeParensOptions:
   BeforeNonEmptyParentheses: false
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceBeforeSquareBrackets: false
+SpacesBeforeTrailingComments: 2
 SpaceInEmptyParentheses: false
 SpacesInAngles: Never
 SpacesInContainerLiterals: false
@@ -235,4 +236,6 @@ StatementMacros:
 TabWidth: 4
 UseTab: Never
 WrapNamespaceBodyWithEmptyLines: Leave
+Macros:
+  - CONTRACTS_DEFINE_CLASS_INVARIANTS(x)=x
 ...
