@@ -1,10 +1,10 @@
-#include "pican/memory/Manager.hpp"
+#include "pican/mem/Manager.hpp"
 
 #include "test/TestUtils.hpp"
 
 #define TEST_SUITE_NAME MemoryManager
 
-namespace pican::memory {
+namespace pican::mem {
 
 TEST(initialize) {
     Manager::initialize(100);

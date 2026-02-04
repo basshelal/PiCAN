@@ -47,15 +47,14 @@ inline ViolationHandler violationHandler_g = pican::contracts::defaultViolationH
 
 #include <fmt/format.h>
 
-#include "pican/SourceLocation.hpp"
 #include "pican/Utils.hpp"
 
 namespace pican::contracts {
 
-using ViolationHandler = std::function<void(const char* expression, SourceLocation sourceLocation)>;
+using ViolationHandler = std::function<void(const char* expression)>;
 
-constexpr auto defaultViolationHandler_g = [](const char* expression, SourceLocation sourceLocation) -> void {
-    pican::panic(fmt::format(fmt::runtime("Contract violated: {} at {}"), expression, sourceLocation.format()));
+constexpr auto defaultViolationHandler_g = [](const char* expression) -> void {
+    pican::panic(fmt::format(fmt::runtime("Contract violated: {} at {}"), expression));
 };
 
 inline ViolationHandler violationHandler_g = pican::contracts::defaultViolationHandler_g;
@@ -65,11 +64,9 @@ class PostCondition {
 private:  // fields
     Function_TP function_f;
     const char* condition_f;
-    SourceLocation sourceLocation_f;
 
 public:  // constructors
-    PostCondition(const Function_TP& function, const char* condition, const SourceLocation& sourceLocation) :
-        function_f{function}, condition_f{condition}, sourceLocation_f{sourceLocation} {
+    PostCondition(const Function_TP& function, const char* condition) : function_f{function}, condition_f{condition} {
     }
 
 public:  // copy-control
@@ -85,7 +82,7 @@ public:  // copy-control
 
     ~PostCondition() noexcept {
         if (!this->function_f()) {
-            pican::contracts::violationHandler_g(this->condition_f, this->sourceLocation_f);
+            pican::contracts::violationHandler_g(this->condition_f);
         }
     }
 };
@@ -120,7 +117,7 @@ public:  // copy-control
 }  // namespace pican::contracts
 
 #define CONTRACTS_ASSERT(condition) \
-    PREPROCESSOR_BLOCK(if (!(condition)) { pican::contracts::violationHandler_g(#condition, CURRENT_SOURCE_LOCATION); })
+    PREPROCESSOR_BLOCK(if (!(condition)) { pican::contracts::violationHandler_g(#condition); })
 
 #define CONTRACTS_PRECONDITION(condition) CONTRACTS_ASSERT(condition)
 
@@ -129,7 +126,7 @@ public:  // copy-control
         [&]() {                                             \
             return (condition);                             \
         },                                                  \
-            #condition, CURRENT_SOURCE_LOCATION             \
+            #condition                                      \
     }
 
 #define CONTRACTS_DEFINE_OLD_VAR(variable) const auto variable_old = variable

@@ -1,48 +1,18 @@
 #include <csignal>
-#include <thread>
 
 #include <magic_enum/magic_enum.hpp>
-#include <pican/LoggerThread.hpp>
 #include <unistd.h>
 
 #include "noheap/NoHeap.hpp"
 #include "pican/Array.hpp"
-#include "pican/Logger.hpp"
 #include "pican/ThreadManager.hpp"
-#include "pican/memory/Manager.hpp"
+#include "pican/log/Logger.hpp"
+#include "pican/log/LoggerThread.hpp"
+#include "pican/mem/Manager.hpp"
 #include "stacktrace/StackTrace.hpp"
 
-// static pican::EventNotifier eventNotifier{};
-//
-// static pican::RingBuffer<pican::can::Frame> ringBuffer{
-//     65'536,
-//     pican::RingBufferOverflowBehavior::DEFAULT,
-//     [](const pican::RingBuffer<pican::can::Frame>&, const pican::can::Frame& frame) -> void {
-//         fmt::println(fmt::runtime("Overflow! {}"), to_string(frame));
-//     },
-//     [](const pican::RingBuffer<pican::can::Frame>&) -> void {
-//         fmt::println(stderr, "Underflow!");
-//     },
-// };
-
-// static void
-// consumerThreadRunnable() {
-// while (eventNotifier.is_active()) {
-//     eventNotifier.wait_blocking();
-//     pican::can::Frame* maybeFrame = ringBuffer.pop();
-//     if (maybeFrame != nullptr) {
-//         fmt::println(to_string(*maybeFrame));
-//     }
-// }
-// }
-
-// static void
-// producerCallback(const pican::can::Frame& frame) {
-// ringBuffer.push_copy(frame);
-// eventNotifier.notify();
-// }
-
-void initialize(int argc, char**argv) {
+void
+initialize(int argc, char** argv) {
     // stacktrace
     stacktrace::initialize(argv);
     ::signal(SIGSEGV, ::stacktrace::signal_handler);
@@ -53,25 +23,26 @@ void initialize(int argc, char**argv) {
     noheap::seal_heap();
     assert(noheap::heap_is_sealed());
 
-    pican::memory::Manager::initialize(pican::memory::Manager::DEFAULT_SIZE);
+    pican::mem::Manager::initialize(pican::mem::Manager::DEFAULT_SIZE);
 
-    pican::ThreadManager::initialize_all();
+    pican::log::LoggerThread::initialize(pican::log::Level::VERBOSE,8,8);
 
-    pican::Logger::initialize(1'024, 8, pican::Level::VERBOSE);
+    pican::log::LoggerThread::register_logger(pican::log::Logger{"stdout", pican::log::Level::VERBOSE, STDOUT_FILENO});
+    pican::log::LoggerThread::register_thread(pican::Thread::calling_thread(), 256);
 
-    pican::Logger::register_log_writer(pican::LogWriter{"stdout", pican::Level::VERBOSE, STDOUT_FILENO});
+    pican::log::LoggerThread::start_thread();
 
-    pican::ThreadManager::start_all();
+    // pican::ThreadManager::initialize();
 
-    pican::LoggerThread::initialize();
-    pican::LoggerThread::start();
+    // pican::ThreadManager::initialize_all();
 
-    pican::memory::Manager::get().seal();
+    // pican::ThreadManager::start_all();
+
+    // pican::mem::Manager::seal();
 }
 
 int
 main(int argc, char** argv) {
-
     initialize(argc, argv);
 
     struct timespec ts;
@@ -79,16 +50,18 @@ main(int argc, char** argv) {
     const auto oldSecs = ts.tv_sec;
 
     pican::Thread::Callable<struct timespec> runnable = [](struct timespec* arg) -> void {
+        pican::log::LoggerThread::register_thread(pican::Thread::calling_thread(), 256);
         while (true) {
-            // fmt::println("{}", arg->tv_sec);
             int min = 1'000'000 / 2;
             int max = 2'000'000;
             int range = max - min + 1;
             int num = rand() % range + min;
             ::usleep(num);
-            pican::Logger::log(pican::Level::ERROR, "{}:{}", arg->tv_sec, arg->tv_nsec);
+            pican::log::LoggerThread::log(pican::log::Level::ERROR, "{}:{}", arg->tv_sec, arg->tv_nsec);
         }
     };
+
+    pican::log::LoggerThread::log(pican::log::Level::ERROR, "{}", 420);
 
     pican::Thread thread{"Example Thread", runnable, &ts};
     fmt::println("{}", magic_enum::enum_name(thread.state()));
@@ -105,17 +78,4 @@ main(int argc, char** argv) {
     thread.stop();
 
     fmt::println("{}", magic_enum::enum_name(thread.state()));
-
-    //
-    // std::thread canFramesConsumer{consumerThreadRunnable};
-    //
-    // pican::can::ReaderThread readerThread{"vcan0", producerCallback};
-    //
-    // readerThread.start();
-    //
-    // sleep(10);
-    //
-    // eventNotifier.close();
-    //
-    // sleep(10);
 }

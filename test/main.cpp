@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "pican/memory/Manager.hpp"
+#include "pican/mem/Manager.hpp"
 #include "stacktrace/StackTrace.hpp"
 #include "test/Heap.hpp"
 
@@ -10,10 +10,10 @@ namespace {
 void
 initialize_memory_manager() {
     [[maybe_unused]]
-    const auto memoryBytes = pican::memory::Manager::DEFAULT_SIZE;
-    pican::memory::Manager::initialize(memoryBytes);
+    const auto memoryBytes = pican::mem::Manager::DEFAULT_SIZE;
+    pican::mem::Manager::initialize(memoryBytes);
     [[maybe_unused]]
-    pican::memory::Manager& memoryManager = pican::memory::Manager::get();
+    pican::mem::Manager& memoryManager = pican::mem::Manager::get();
 }
 }  // namespace
 

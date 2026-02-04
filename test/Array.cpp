@@ -17,7 +17,7 @@ TEST(create) {
     Count count = 8;
     SizeBytes size = ELEMENT_SIZE * 4;
 
-    memory::Block block = memory::Manager::get().get_block(size);
+    mem::Block block = mem::Manager::get().get_block(size);
 
     Array<Element> array{block};
 
@@ -33,7 +33,7 @@ TEST(set_and_get) {
     Count count = 8;
     SizeBytes size = ELEMENT_SIZE * count;
 
-    memory::Block block = memory::Manager::get().get_block(size);
+    mem::Block block = mem::Manager::get().get_block(size);
 
     Array<Element> array{block};
 

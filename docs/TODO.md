@@ -20,12 +20,12 @@
 * ~~We need a logging system which can log to stdout and any files, must be heap-less and allow for varargs but safe~~
 * ~~Custom Thread class wrapping pthreads, need to rethink how we will do inter-thread communication like
   EventNotifier~~
+* ~~Git commit and push~~
 
 ## Doing
 
 * LoggerThread
 * ThreadManager
-* Git commit and push
 
 * Create a MemoryManager of some kind for the tests, they will need to have usable memory
 * Allow GoogleTest to be whitelisted completely by doing a check in each heap allocation to allow for any allocations
@@ -43,8 +43,9 @@
   * CAN Thread: Reads, filters, processes CAN frames to push into a CANBuffer (map of CAN ID -> RingBuffer)
   * SystemMonitor Thread ? : Reads System stats like CPU usage, memory usage etc and push to a Buffer
   * UI Thread: Reads from CANBuffer and SystemMonitor Info and displays on a UI
-  * Disk Thread: Writes to disk and stdout for logging purposes, may be unnecessary
+  * Logger Thread: Prints logs to stdout and files
   * Network Thread: Pushes packets or messages over the network, can be merged into Disk Thread
+  * GPS Thread?
   * Definitely need CAN and UI Threads to be separate, the others can maybe be merged into 1 Thread if necessary
 * Look into sanitizers and valgrind and other tools like that
 * Yocto docker, qemu stuff which then needs better scripts and CMake targets and presets and builds

@@ -3,9 +3,9 @@
 #include <cstdint>
 
 #include "../../../build/debug/_deps/googletest-src/googletest/include/gtest/gtest_prod.h"
-#include "pican/memory/Utils.hpp"
+#include "pican/mem/Utils.hpp"
 
-namespace pican::memory {
+namespace pican::mem {
 
 class Manager;
 class Arena;
@@ -39,7 +39,7 @@ public:  // member functions
     [[nodiscard]]
     inline bool
     is_aligned(Alignment alignment) const& {
-        return pican::memory::address_is_aligned(this->address_f, alignment);
+        return pican::mem::address_is_aligned(this->address_f, alignment);
     }
 
     [[nodiscard]]
@@ -52,7 +52,7 @@ public:  // member functions
     [[nodiscard]]
     inline TP*
     ptr_at_offset(Offset offset) const& {
-        return pican::memory::address_to_ptr<TP>(this->address_f + offset);
+        return pican::mem::address_to_ptr<TP>(this->address_f + offset);
     }
 
     [[nodiscard]]
@@ -90,7 +90,7 @@ public:  // getters
     [[nodiscard]]
     inline TP*
     address_to_ptr() const& {
-        return pican::memory::address_to_ptr<TP>(this->address_f);
+        return pican::mem::address_to_ptr<TP>(this->address_f);
     }
 
     [[nodiscard]]

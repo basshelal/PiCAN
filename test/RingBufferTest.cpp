@@ -20,7 +20,7 @@ TEST(create) {
     AUTO_HEAP_SEAL();
     const pican::Count capacity = 8;
 
-    memory::Block block = pican::memory::Manager::get().get_block(sizeof(Element) * (capacity + 1));
+    mem::Block block = pican::mem::Manager::get().get_block(sizeof(Element) * (capacity + 1));
     Array<Element> array{block};
 
     const RingBufferOverflowBehavior overflowBehavior = RingBufferOverflowBehavior::DEFAULT;
@@ -39,7 +39,7 @@ TEST(push_copy) {
     AUTO_HEAP_SEAL();
     const pican::Count capacity = 8;
 
-    memory::Block block = pican::memory::Manager::get().get_block(sizeof(Element) * (capacity + 1));
+    mem::Block block = pican::mem::Manager::get().get_block(sizeof(Element) * (capacity + 1));
     Array<Element> array{block};
 
     const RingBufferOverflowBehavior overflowBehavior = RingBufferOverflowBehavior::DEFAULT;

@@ -12,8 +12,8 @@
 #include "pican/Result.hpp"
 #include "pican/Types.hpp"
 #include "pican/Utils.hpp"
-#include "pican/memory/Manager.hpp"
-#include "pican/memory/Utils.hpp"
+#include "pican/mem/Manager.hpp"
+#include "pican/mem/Utils.hpp"
 
 namespace pican {
 
@@ -50,11 +50,11 @@ private:  // member fields
     // to be on different cache lines to avoid this issue
     // this matters for performance of hotspots and hot loops
 
-    alignas(pican::memory::CACHE_LINE_ALIGNMENT) std::atomic<Index> writeIndex_f;
+    alignas(pican::mem::CACHE_LINE_ALIGNMENT) std::atomic<Index> writeIndex_f;
 
-    alignas(pican::memory::CACHE_LINE_ALIGNMENT) std::atomic<Index> readIndex_f;
+    alignas(pican::mem::CACHE_LINE_ALIGNMENT) std::atomic<Index> readIndex_f;
 
-    alignas(pican::memory::CACHE_LINE_ALIGNMENT) std::atomic<Count> itemsWritten_f;
+    alignas(pican::mem::CACHE_LINE_ALIGNMENT) std::atomic<Count> itemsWritten_f;
 
 public:  // constructors
     RingBuffer(

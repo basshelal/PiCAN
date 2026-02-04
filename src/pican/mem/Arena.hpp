@@ -5,10 +5,10 @@
 #include "pican/Contracts.hpp"
 #include "pican/Result.hpp"
 #include "pican/Utils.hpp"
-#include "pican/memory/Block.hpp"
-#include "pican/memory/Utils.hpp"
+#include "pican/mem/Block.hpp"
+#include "pican/mem/Utils.hpp"
 
-namespace pican::memory {
+namespace pican::mem {
 
 class Manager;
 
@@ -53,11 +53,11 @@ public:  // member functions
         Block block = this->get_block(size, alignment);
 
         TP* ptr = block.address_to_ptr<TP>();
-        if (ptr == pican::memory::ptr_to_address(nullptr)) {
+        if (ptr == pican::mem::ptr_to_address(nullptr)) {
             return nullptr;
         }
         CONTRACTS_ASSERT(block.size_bytes() >= size);
-        CONTRACTS_ASSERT(pican::memory::address_is_aligned(ptr, alignment));
+        CONTRACTS_ASSERT(pican::mem::address_is_aligned(ptr, alignment));
 
         return ptr;
     }
@@ -71,7 +71,7 @@ public:  // member functions
             return nullptr;
         }
 
-        return pican::memory::construct_at(ptr, std::forward<Args>(args)...);
+        return pican::mem::construct_at(ptr, std::forward<Args>(args)...);
     }
 
     void

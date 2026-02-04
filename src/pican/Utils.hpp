@@ -1,8 +1,12 @@
 #pragma once
 
-#include <fmt/core.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 
-#include "pican/SourceLocation.hpp"
+#include <unistd.h>
+#include <string_view>
+
 #include "pican/Types.hpp"
 #include "stacktrace/StackTrace.hpp"
 
@@ -27,19 +31,15 @@ clamp(const TP& min, const TP& val, const TP& max) {
     }
 }
 
-template<typename... Args_TP>
-[[nodiscard]]
-inline std::string
-format(fmt::format_string<Args_TP...> formatString, Args_TP&&... args) {
-    return fmt::format(fmt::runtime(formatString), args...);
-}
-
-[[noreturn]]
 inline void
-panic(const std::string_view& message) {
-    fmt::println(stderr, message);
-    stacktrace::print_stacktrace(stderr);
-    std::abort();
+write_line(FILE* file, const std::string_view& message) {
+    FileDescriptor fileDescriptor = ::fileno(file);
+    if (fileDescriptor == -1) {
+        return;
+    }
+    // TODO @basshelal Tue 03-Feb-2026 : Optimize into 1 syscall somehow if possible!
+    ::write(fileDescriptor, message.data(), message.length());
+    ::write(fileDescriptor, "\n", 1);
 }
 
 [[noreturn]]
@@ -48,23 +48,29 @@ exit_immediately() {
     std::_Exit(1);
 }
 
+// TODO @basshelal Tue 03-Feb-2026 : Allow for fmt formatting here maybe?
+[[noreturn]]
+inline void
+panic(const std::string_view& message) {
+    pican::write_line(stderr, message);
+    stacktrace::print_stacktrace(stderr);
+    pican::exit_immediately();
+}
+
 [[nodiscard]]
 Milliseconds
 get_current_millis();
 
 [[noreturn]]
 inline void
-todo(const std::string& message, const SourceLocation& sourceLocation) {
-    pican::panic(fmt::format("{} at {}", message, sourceLocation.format()));
-}
-
-[[noreturn]]
-inline void
-todo(const std::string& message) {
+todo(const std::string_view& message) {
     pican::panic(message);
 }
+
 }  // namespace pican
 
-#define TODO(Message) pican::todo(Message, CURRENT_SOURCE_LOCATION)
+#define TODO(Message) pican::todo(Message)
 
-#define TODO_NOT_IMPLEMENTED() pican::todo("Not Implemented", CURRENT_SOURCE_LOCATION)
+#define TODO_NOT_IMPLEMENTED() pican::todo("Not Implemented")
+
+#define SANITY_CHECK(condition) assert(condition)

@@ -1,8 +1,8 @@
-#include "pican/memory/Arena.hpp"
+#include "pican/mem/Arena.hpp"
 
 #include "pican/Contracts.hpp"
 
-namespace pican::memory {
+namespace pican::mem {
 
 Block
 Arena::get_block(SizeBytes size, Alignment alignment) & {
@@ -20,7 +20,7 @@ Arena::get_block(SizeBytes size, Alignment alignment) & {
     }
 
     const Address address = this->head_address() + paddingRequired;
-    CONTRACTS_ASSERT(pican::memory::address_is_aligned(address, alignment));
+    CONTRACTS_ASSERT(pican::mem::address_is_aligned(address, alignment));
     this->headOffset_f = newHeadOffset;
 
     return Block{address, size};

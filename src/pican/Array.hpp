@@ -1,14 +1,14 @@
 #pragma once
 
 #include "pican/Contracts.hpp"
-#include "pican/memory/Block.hpp"
-#include "pican/memory/Utils.hpp"
+#include "pican/mem/Block.hpp"
+#include "pican/mem/Utils.hpp"
 
 namespace pican {
 template<typename TP>
 class Array {
 private:  // types
-    using Block = pican::memory::Block;
+    using Block = pican::mem::Block;
 
 public:  // types
     using Index = std::size_t;
@@ -19,11 +19,11 @@ private:  // constants
     static constexpr Alignment TP_ALIGNMENT = alignof(TP);
 
 private:  // fields
-    pican::memory::Block block_f;
+    pican::mem::Block block_f;
     Count itemsCount_f;
 
 public:  // constructors
-    explicit Array(const pican::memory::Block& block) : block_f{block}, itemsCount_f{block.size_bytes() / TP_SIZE} {
+    explicit Array(const pican::mem::Block& block) : block_f{block}, itemsCount_f{block.size_bytes() / TP_SIZE} {
     }
 
 public:  // copy-control
@@ -68,7 +68,7 @@ public:  // member functions
 
 public:  // getters
     [[nodiscard]]
-    inline const pican::memory::Block&
+    inline const pican::mem::Block&
     block() const& {
         return this->block_f;
     }

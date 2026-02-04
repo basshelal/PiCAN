@@ -12,10 +12,10 @@
 
 #include "pican/Result.hpp"
 #include "pican/Utils.hpp"
-#include "pican/memory/Block.hpp"
-#include "pican/memory/Utils.hpp"
+#include "pican/mem/Block.hpp"
+#include "pican/mem/Utils.hpp"
 
-namespace pican::memory {
+namespace pican::mem {
 template<typename TP>
 class Pool {
 private:  // constants
@@ -128,7 +128,7 @@ public:  // functions
             return nullptr;
         }
 
-        return pican::memory::construct_at(ptr, std::forward<Args>(args)...);
+        return pican::mem::construct_at(ptr, std::forward<Args>(args)...);
     }
 
     void
@@ -148,12 +148,12 @@ public:  // functions
         if (obj == nullptr) {
             return false;
         }
-        const Address address = pican::memory::ptr_to_address(obj);
+        const Address address = pican::mem::ptr_to_address(obj);
 
         if (address > this->block_f.end_address() || address < this->block_f.address()) {
             return false;
         }
-        if (!pican::memory::address_is_aligned(address, TP_ALIGNMENT)) {
+        if (!pican::mem::address_is_aligned(address, TP_ALIGNMENT)) {
             return false;
         }
 

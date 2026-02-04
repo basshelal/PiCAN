@@ -5,8 +5,13 @@
 
 #include <pican/Types.hpp>
 #include <pthread.h>
+#include <unistd.h>
 
 namespace pican {
+
+using ThreadId = pthread_t;
+using ProcessId = pid_t;
+using KernelThreadId = ProcessId;
 
 class Thread {
 public:  // types
@@ -25,7 +30,7 @@ private:  // types
     using ErasedCallable = void (*)(void* arg);
     using Invoker = void (*)(ErasedCallable callable, void* arg);
 
-private:  // fields
+public:  // fields
     Name name_f;
     Invoker invoker_f;
     ErasedCallable callable_f;
@@ -33,12 +38,13 @@ private:  // fields
     std::atomic<State> state_f;
     pthread_t pthread_f;
     pthread_attr_t pthreadAttr_f;
+    KernelThreadId kThreadId_f;
 
 public:  // constructors
     template<typename CallableArg_TP>
     Thread(const Name& name, const Callable<CallableArg_TP>& callable, CallableArg_TP* arg) :
         name_f{name}, callable_f{reinterpret_cast<ErasedCallable>(callable)}, callableArg_f{arg},
-        state_f{State::CREATED}, pthread_f{0}, pthreadAttr_f{} {
+        state_f{State::CREATED}, pthread_f{0}, pthreadAttr_f{}, kThreadId_f{0} {
         this->invoker_f = [](ErasedCallable erasedCallable, void* erasedArg) -> void {
             Callable<CallableArg_TP> castCallable = reinterpret_cast<Callable<CallableArg_TP>>(erasedCallable);
             CallableArg_TP* castArg = reinterpret_cast<CallableArg_TP*>(erasedArg);
@@ -81,9 +87,7 @@ public:  // getters
     [[nodiscard]]
     ThreadId
     id() const& {
-        return pthread_gettid_np()
-
-        this->pthread_f;
+        return this->pthread_f;
     }
 
 public:  // member functions
@@ -96,6 +100,12 @@ public:  // member functions
 private:  // member functions
     static void*
     pthread_runnable(void* arg);
+
+public:  // static functions
+    static inline ThreadId
+    calling_thread() {
+        return ::pthread_self();
+    }
 };
 
 }  // namespace pican

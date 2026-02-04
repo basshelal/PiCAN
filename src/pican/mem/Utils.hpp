@@ -8,7 +8,7 @@
 #include "pican/Utils.hpp"
 #include "stacktrace/StackTrace.hpp"
 
-namespace pican::memory {
+namespace pican::mem {
 
 // If compiler doesn't support the hardware constant, default to 64
 #ifdef __cpp_lib_hardware_interference_size
