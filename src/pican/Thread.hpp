@@ -9,14 +9,17 @@
 
 namespace pican {
 
-using ThreadId = pthread_t;
+// TODO @basshelal Thu 05-Feb-2026 : ThreadId is the pthread id which is basically just the pthread_t,
+//  useless except with pthread function contexts, KernelThreadId is more generally useful and should
+//  be renamed to ThreadId, this will actually give us the Linux thread id but can only be obtained by
+//  being called from the thread itself, using that, we should also allow for thread lookup by id or name
+//  and get one from the other
 using ProcessId = pid_t;
-using KernelThreadId = ProcessId;
+using ThreadId = ProcessId;
+using ThreadName = std::string_view;
 
 class Thread {
 public:  // types
-    using Name = std::string_view;
-
     template<typename CallableArg_TP>
     using Callable = void (*)(CallableArg_TP* arg);
 
@@ -31,20 +34,20 @@ private:  // types
     using Invoker = void (*)(ErasedCallable callable, void* arg);
 
 public:  // fields
-    Name name_f;
+    ThreadName name_f;
     Invoker invoker_f;
     ErasedCallable callable_f;
     void* callableArg_f;
     std::atomic<State> state_f;
     pthread_t pthread_f;
     pthread_attr_t pthreadAttr_f;
-    KernelThreadId kThreadId_f;
+    ThreadId threadId_f;
 
 public:  // constructors
     template<typename CallableArg_TP>
-    Thread(const Name& name, const Callable<CallableArg_TP>& callable, CallableArg_TP* arg) :
+    Thread(const ThreadName& name, const Callable<CallableArg_TP>& callable, CallableArg_TP* arg) :
         name_f{name}, callable_f{reinterpret_cast<ErasedCallable>(callable)}, callableArg_f{arg},
-        state_f{State::CREATED}, pthread_f{0}, pthreadAttr_f{}, kThreadId_f{0} {
+        state_f{State::CREATED}, pthread_f{0}, pthreadAttr_f{}, threadId_f{0} {
         this->invoker_f = [](ErasedCallable erasedCallable, void* erasedArg) -> void {
             Callable<CallableArg_TP> castCallable = reinterpret_cast<Callable<CallableArg_TP>>(erasedCallable);
             CallableArg_TP* castArg = reinterpret_cast<CallableArg_TP*>(erasedArg);
@@ -67,7 +70,7 @@ public:  // copy-control
 
 public:  // getters
     [[nodiscard]]
-    const Name&
+    const ThreadName&
     name() const& {
         return this->name_f;
     }
@@ -87,7 +90,7 @@ public:  // getters
     [[nodiscard]]
     ThreadId
     id() const& {
-        return this->pthread_f;
+        return this->threadId_f;
     }
 
 public:  // member functions
@@ -102,10 +105,9 @@ private:  // member functions
     pthread_runnable(void* arg);
 
 public:  // static functions
-    static inline ThreadId
-    calling_thread() {
-        return ::pthread_self();
-    }
+    [[nodiscard]]
+    static ThreadId
+    calling_thread();
 };
 
 }  // namespace pican

@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Logger.hpp"
+#include <fmt/format.h>
+
+#include "Sink.hpp"
 #include "pican/Array.hpp"
 #include "pican/Thread.hpp"
 #include "pican/ThreadManager.hpp"
@@ -23,27 +25,29 @@ private:  // fields
     Level level_f;
     Array<Buffer> buffers_f;
     Count buffersCount_f;
-    Array<Logger> loggers_f;
-    Count loggersCount_f;
+    Array<Sink> sinks_f;
+    Count sinksCount_f;
     EventFD eventfd_f;
     Thread thread_f;
 
 private:  // constructor
-    LoggerThread(Level level, Count maxBuffersCount, Count maxLoggersCount);
+    LoggerThread(Level level, Count threadCount, Count sinkCount, Count threadBufferSize);
 
 public:  // member functions
     static void
-    initialize(Level level, Count maxBuffersCount, Count maxLoggersCount);
+    initialize(Level level, Count threadCount, Count sinkCount, Count threadBufferSize);
 
     static void
-    register_logger(const Logger& logger);
+    register_logger(const Sink& logger);
 
     static void
-    register_thread(ThreadId threadId, Count bufferEntryCount);
+    register_thread(ThreadId id);
 
     static void
     start_thread();
 
+    // TODO @basshelal Thu 05-Feb-2026 : This needs to be as cheap as possible to call from any thread
+    //  possibly hundreds of times a second!
     template<typename... Args_TP>
     static inline void
     log(Level level, fmt::format_string<Args_TP...> format, Args_TP&&... args) {
@@ -61,9 +65,8 @@ public:  // member functions
             // no buffer for the calling thread
         }
 
-        const Milliseconds timestamp = pican::get_current_millis();
-        Entry entry{level, timestamp};
-        char* messageBuffer = entry.message.data();
+        Entry entry{level};
+        char* messageBuffer = entry.message_f.data();
 
         fmt::format_to_n_result<decltype(messageBuffer)> result =
             fmt::format_to_n(messageBuffer, MESSAGE_MAX_SIZE, format, std::forward<Args_TP>(args)...);
@@ -74,7 +77,7 @@ public:  // member functions
         } else {
             // entry was truncated!
             messageBuffer[MESSAGE_MAX_SIZE] = MESSAGE_TRUNCATED_CHAR;
-            messageBuffer[entry.message.size() - 1] = NULL_TERMINATOR_CHAR;
+            messageBuffer[entry.message_f.size() - 1] = NULL_TERMINATOR_CHAR;
         }
 
         foundBuffer->entries().push_copy(entry);

@@ -2,11 +2,8 @@
 
 namespace pican::log {
 
-Buffer::Buffer(const ThreadId& threadId, Count entriesCount) :
-    threadId_f{threadId},
-    entries_f{RingBuffer<Entry>{
-        pican::mem::Manager::get_array<Entry>(entriesCount), RingBufferOverflowBehavior::OVERWRITE_OLDEST
-    }} {
+Buffer::Buffer(const Array<Entry>& array) :
+    entries_f{array, RingBufferOverflowBehavior::OVERWRITE_OLDEST}, threadId_f{0} {
 }
 
 }  // namespace pican::log

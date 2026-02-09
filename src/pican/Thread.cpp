@@ -15,7 +15,7 @@ Thread::pthread_runnable(void* arg) {
     ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     ::pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
 
-    thread->kThreadId_f = ::gettid();
+    thread->threadId_f = ::gettid();
 
     thread->invoker_f(thread->callable_f, thread->callableArg_f);
 
@@ -55,6 +55,12 @@ Thread::stop() {
 
     this->state_f.store(State::STOPPED, std::memory_order_release);
     this->pthread_f = 0;
+}
+
+/* static */
+ThreadId
+Thread::calling_thread() {
+    return ::gettid();
 }
 
 }  // namespace pican

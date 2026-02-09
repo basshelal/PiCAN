@@ -6,15 +6,24 @@
 #include "pican/Thread.hpp"
 
 namespace pican {
+constexpr Count MAX_THREADS_COUNT = 8;
+
 class ThreadManager {
 private:  // types
     using This = ThreadManager;
+
+    struct ThreadIdNamePair {
+        ThreadId id;
+        ThreadName name;
+    };
 
 private:  // static fields
     static ThreadManager* instance_sf;
 
 private:  // fields
-    log::LoggerThread *logger_f;
+    bool started_f;
+    std::array<ThreadIdNamePair, MAX_THREADS_COUNT> threads_f;
+    Count threadsCount_f;
 
 private:  // constructor
     ThreadManager() = default;
@@ -37,14 +46,13 @@ public:  // static functions
     initialize();
 
     static void
-    initialize_all();
+    start_all_threads();
 
-    static void
-    start_all();
+    static ThreadName
+    get_thread_name_from_id(ThreadId id);
 
-    [[nodiscard]]
     static ThreadId
-    calling_thread();
+    get_thread_id_from_name(ThreadName name);
 
 public:  // getters
     [[nodiscard]]

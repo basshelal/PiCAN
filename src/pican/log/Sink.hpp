@@ -2,12 +2,14 @@
 
 #include <array>
 #include <cstdint>
+#include <cstdio>
 
 #include <fmt/format.h>
 
 #include "pican/EventFD.hpp"
 #include "pican/RingBuffer.hpp"
 #include "pican/Types.hpp"
+#include "pican/File.hpp"
 #include "pican/log/Entry.hpp"
 #include "pican/log/Utils.hpp"
 
@@ -15,48 +17,49 @@ namespace pican::log {
 
 class LoggerThread;
 
-class Logger {
+class Sink {
 private:  // fields
     std::string_view name_f;
     Level level_f;
-    FileDescriptor fileDescriptor_f;
+    File file_f;
 
 public:  // constructor
-    Logger(const std::string_view& name, Level level, FileDescriptor fileDescriptor) :
-        name_f{name}, level_f{level}, fileDescriptor_f{fileDescriptor} {
-    }
+    Sink(const std::string_view& name, Level level, const File& file);
 
 public:  // copy-control
-    Logger(const Logger& rhs) = default;
+    Sink(const Sink& rhs) = default;
 
-    Logger(Logger&& rhs) noexcept = default;
+    Sink(Sink&& rhs) noexcept = default;
 
-    Logger&
-    operator=(const Logger& rhs) = default;
+    Sink&
+    operator=(const Sink& rhs) = default;
 
-    Logger&
-    operator=(Logger&& rhs) noexcept = default;
+    Sink&
+    operator=(Sink&& rhs) noexcept = default;
 
-    ~Logger() = default;
+    ~Sink();
 
 public:  // getters
     [[nodiscard]]
-    inline std::string_view
+    inline const std::string_view&
     name() const& {
         return this->name_f;
     }
 
     [[nodiscard]]
-    inline Level
+    inline const Level&
     level() const& {
         return this->level_f;
     }
 
     [[nodiscard]]
-    inline FileDescriptor
-    file_descriptor() const& {
-        return this->fileDescriptor_f;
+    inline const File&
+    file() const& {
+        return this->file_f;
     }
+
+public: // friends
+    friend class LoggerThread;
 };
 
 }  // namespace pican::log

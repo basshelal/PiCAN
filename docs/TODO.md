@@ -2,30 +2,14 @@
 
 ## Done
 
-* ~~refactor namespaces and directories use `pican` as the prefix:~~
-  * ~~`memory`, `ui`, `can`, `sysinfo`, other stuff doesn't _need_ a nested namespace if it doesn't fit in one~~
-* ~~Remove the separation of `ui` into a separate directory, we can always do that again later, keep things simple now~~
-* ~~wrap malloc and friends to avoid ANY heap allocation, which should just abort/terminate and print the stack trace
-  we need to make this work for GoogleTests as well by using `noheap` as a library that disables the heap which is
-  added for the main `pican-app`but not for `pican-test` which will have its own heap which will allow GoogleTest
-  to use it, then have an RAII scope guarded class to check if any of OUR heap allocations were done using a global
-  thread local variable~~
-* ~~install and setup libbacktrace so that we can get the backtraces when needed, usually when we abort/terminate~~
-* ~~Finish MemoryManager to return and track Memory containers~~
-  * ~~Block~~
-  * ~~Arena~~
-  * ~~Array~~
-  * ~~Pool~~
-* ~~RingBuffer (try to have 1 implementation for both behaviors, overwriting is very important)~~
-* ~~We need a logging system which can log to stdout and any files, must be heap-less and allow for varargs but safe~~
-* ~~Custom Thread class wrapping pthreads, need to rethink how we will do inter-thread communication like
-  EventNotifier~~
-* ~~Git commit and push~~
+* Fix up LoggerThread, possibly renaming to Logger, make logging API cleaner
+* ThreadManager, make its API also cleaner and easier
 
 ## Doing
 
-* LoggerThread
-* ThreadManager
+* pican::can::Thread and friends to read, filter, process and push frames to a buffer, we can
+  decide if this thread will be responsible for transforming into app usable messages instead
+  of compact proprietary frames, thus we would need a Frame parsing mechanism (hard coded for now is best)
 
 * Create a MemoryManager of some kind for the tests, they will need to have usable memory
 * Allow GoogleTest to be whitelisted completely by doing a check in each heap allocation to allow for any allocations

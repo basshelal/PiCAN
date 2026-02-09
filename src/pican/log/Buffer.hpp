@@ -8,11 +8,11 @@ namespace pican::log {
 
 class Buffer {
 private:  // fields
-    ThreadId threadId_f;
     RingBuffer<Entry> entries_f;
+    ThreadId threadId_f;
 
 public:  // constructor
-    Buffer(const ThreadId& threadId, Count entriesCount);
+    Buffer(const Array<Entry>& array);
 
 public:  // getters
     [[nodiscard]]
@@ -26,6 +26,8 @@ public:  // getters
     entries() & {
         return this->entries_f;
     }
+    public: // friends
+    friend class LoggerThread;
 };
 
 }  // namespace pican::log

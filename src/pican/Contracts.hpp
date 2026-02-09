@@ -54,7 +54,7 @@ namespace pican::contracts {
 using ViolationHandler = std::function<void(const char* expression)>;
 
 constexpr auto defaultViolationHandler_g = [](const char* expression) -> void {
-    pican::panic(fmt::format(fmt::runtime("Contract violated: {} at {}"), expression));
+    pican::panic("Contract violation!");
 };
 
 inline ViolationHandler violationHandler_g = pican::contracts::defaultViolationHandler_g;

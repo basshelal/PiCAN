@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cassert>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
-#include <cassert>
+#include <string_view>
 
 #include <unistd.h>
-#include <string_view>
 
 #include "pican/Types.hpp"
 #include "stacktrace/StackTrace.hpp"
