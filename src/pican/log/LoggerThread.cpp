@@ -1,87 +1,30 @@
-#include "LoggerThread.hpp"
+#include "pican/log/LoggerThread.hpp"
 
 #include <fmt/format.h>
 #include <magic_enum/magic_enum.hpp>
 #include <unistd.h>
 
-#include "LoggerThread.hpp"
 #include "pican/time/DateTime.hpp"
 
 namespace pican::log {
-LoggerThread* LoggerThread::instance_sf = nullptr;
 
-LoggerThread::LoggerThread(Level level, Count threadCount, Count sinkCount, Count threadBufferSize) :
-    level_f{level}, buffers_f{mem::Manager::get_array<Buffer>(threadCount)}, buffersCount_f{0},
-    sinks_f{mem::Manager::get_array<Sink>(sinkCount)}, sinksCount_f{0}, eventfd_f{EventFD::Mode::NOTIFY},
-    thread_f{"LoggerThread", &LoggerThread::runnable, this} {
-}
-
-/* static */
-void
-LoggerThread::initialize(Level level, Count threadCount, Count sinkCount, Count threadBufferSize) {
-    if (This::instance_sf != nullptr) {
-        pican::panic("LoggerThread already initialized!");
-    }
-
-    mem::Block block = mem::Manager::get_block(sizeof(LoggerThread));
-
-    This::instance_sf =
-        new (block.address_to_ptr<LoggerThread>()) LoggerThread{level, threadCount, sinkCount, threadBufferSize};
-
+LoggerThread::LoggerThread(
+    log::Level level, Count sinkCount, Count threadCount, Count threadBufferSize, ThreadName name
+) :
+    level_f{level}, buffers_f{mem::Manager::get_array<Buffer>(threadCount)},
+    sinks_f{mem::Manager::get_array<Sink>(sinkCount)}, eventfd_f{EventFD::Mode::NOTIFY},
+    thread_f{&LoggerThread::runnable, this}, counter_f{0}, identity_f{-1, name} {
     // initialize buffers
-    for (Index i = 0; i < This::instance_sf->buffers_f.items_count(); ++i) {
+    for (Index i = 0; i < this->buffers_f.capacity(); ++i) {
         Array<Entry> array = mem::Manager::get_array<Entry>(threadBufferSize);
-        Buffer* buffer = This::instance_sf->buffers_f.get_at_ptr(i);
+        Buffer* buffer = this->buffers_f.get_ptr(i);
         buffer = new (buffer) Buffer{array};
     }
-
-    This::ensure_initialized();
-}
-
-/* static */
-void
-LoggerThread::register_logger(const Sink& logger) {
-    This::ensure_initialized();
-    LoggerThread& instance = *This::instance_sf;
-    if (instance.sinksCount_f >= instance.sinks_f.items_count()) {
-        pican::panic("Loggers at capacity");
-    }
-    instance.sinks_f.set_at(instance.sinksCount_f, logger);
-    ++instance.sinksCount_f;
-}
-
-/* static */
-void
-LoggerThread::register_thread(ThreadId id) {
-    This::ensure_initialized();
-    LoggerThread& instance = *This::instance_sf;
-    Buffer* found = instance.get_buffer_of_thread(id);
-    if (found != nullptr) {
-        pican::panic("The thread is already registered!");
-    }
-    if (instance.buffersCount_f >= instance.buffers_f.items_count()) {
-        pican::panic("Buffers at capacity!");
-    }
-
-    Buffer* buffer = instance.buffers_f.get_at_ptr(instance.buffersCount_f);
-    buffer->threadId_f = id;
-
-    ++instance.buffersCount_f;
-}
-
-/* static */
-void
-LoggerThread::start_thread() {
-    This::ensure_initialized();
-    This::instance_sf->thread_f.start();
 }
 
 /* static */
 void
 LoggerThread::runnable(LoggerThread* self) {
-    This::ensure_initialized();
-    LoggerThread& instance = *This::instance_sf;
-
     const SizeBytes dateTimeBufferSize = time::DateTime::FORMAT_MINIMUM_LENGTH;
     std::array<char, dateTimeBufferSize> dateTimeBuffer;
 
@@ -96,23 +39,23 @@ LoggerThread::runnable(LoggerThread* self) {
     std::array<char, totalBufferSize> totalBuffer;
 
     while (true) {
-        instance.eventfd_f.wait_blocking();
-
-        // TODO @basshelal Wed 04-Feb-2026 : This is a pretty good candidate for epoll,
-        //  many threads need to "notify" this thread that it needs to wake up and do stuff
-
-        for (Index bufferIndex = 0; bufferIndex < instance.buffersCount_f; ++bufferIndex) {
-            Buffer* buffer = instance.buffers_f.get_at_ptr(bufferIndex);
-            while (!buffer->entries().is_empty()) {
-                for (Index loggerIndex = 0; loggerIndex < instance.sinksCount_f; ++loggerIndex) {
-                    Sink* logger = instance.sinks_f.get_at_ptr(loggerIndex);
-                    std::optional<Entry> entryOptional = buffer->entries().pop_move();
+        self->counter_f.fetch_add(1, std::memory_order_relaxed);
+        self->eventfd_f.wait_blocking();
+        for (Buffer& buffer : self->buffers_f) {
+            // we will pop this many entries only, any entries added to this buffer
+            //  while we are printing will be processed on the next run, this is to avoid starvation of one
+            //  buffer by a very busy/full buffer
+            Count toPop = buffer.entries_f.size();
+            while (toPop > 0) {
+                for (Sink& sink : self->sinks_f) {
+                    std::optional<Entry> entryOptional = buffer.entries_f.pop_move();
+                    --toPop;
                     if (!entryOptional.has_value()) {
                         continue;
                     }
                     const Entry& entry = entryOptional.value();
 
-                    if (logger->level() < entry.level()) {
+                    if (sink.level() < entry.level()) {
                         continue;
                     }
 
@@ -121,42 +64,63 @@ LoggerThread::runnable(LoggerThread* self) {
 
                     fmt::format_to_n(levelBuffer.data(), levelBufferSize, "{}", level_to_string(entry.level()));
 
-                    const ThreadId threadId = buffer->thread_id();
-                    const ThreadName threadName = ThreadManager::get_thread_name_from_id(threadId);
-                    fmt::format_to_n(threadBuffer.data(), threadBufferSize, "{}:{}", threadName, threadId);
-
-                    fmt::format_to_n_result<char*> formatted = fmt::format_to_n(
-                        totalBuffer.data(), totalBufferSize, "{} {} {} {}\n", dateTimeBuffer.data(), levelBuffer.data(),
-                        threadBuffer.data(), entry.message().data()
+                    const ThreadIdentity threadIdentity = buffer.thread_identity();
+                    fmt::format_to_n(
+                        threadBuffer.data(), threadBufferSize, "{}:{}", threadIdentity.name, threadIdentity.id
                     );
 
-                    logger->file_f.write(totalBuffer.data(), sizeof(char), formatted.size);
+                    fmt::format_to_n_result<char*> formatted = fmt::format_to_n(
+                        totalBuffer.data(), totalBufferSize, "{} {} {} {}\n\0", dateTimeBuffer.data(),
+                        levelBuffer.data(), threadBuffer.data(), entry.message().data()
+                    );
+
+                    sink.file_f.write(totalBuffer.data(), sizeof(char), formatted.size);
                 }
             }
         }
     }
 }
 
-Buffer*
-LoggerThread::get_buffer_of_thread(ThreadId threadId) const& {
-    if (threadId == 0) {
-        return nullptr;
+LoggerThread::Result
+LoggerThread::register_sink(const Sink& sink) & {
+    if (this->sinks_f.size() >= this->sinks_f.capacity()) {
+        return LoggerThread::Result::failure_by_copy(LoggerThread::Error::CAPACITY_REACHED);
     }
-    for (Index i = 0; i < this->buffersCount_f; ++i) {
-        Buffer* buffer = this->buffers_f.get_at_ptr(i);
-        if (buffer->thread_id() == threadId) {
-            return buffer;
+    this->sinks_f.add_copy(sink);
+    return LoggerThread::Result::success_default();
+}
+
+LoggerThread::Result
+LoggerThread::register_thread(const ThreadIdentity& identity) & {
+    Buffer* found = this->get_buffer_of_thread(identity.id);
+    if (found != nullptr) {
+        return LoggerThread::Result::failure_by_copy(LoggerThread::Error::ALREADY_REGISTERED);
+    }
+    if (this->buffers_f.size() >= this->buffers_f.capacity()) {
+        return LoggerThread::Result::failure_by_copy(LoggerThread::Error::CAPACITY_REACHED);
+    }
+
+    Buffer& buffer = this->buffers_f.get(this->buffers_f.size());
+    buffer.threadIdentity_f = identity;
+    return LoggerThread::Result::success_default();
+}
+
+void
+LoggerThread::start() & {
+    if (this->thread_f.state() == ThreadState::RUNNING) {
+        return;
+    }
+    this->thread_f.start();
+}
+
+Buffer*
+LoggerThread::get_buffer_of_thread(const ThreadId& id) const& {
+    for (Buffer& buffer : this->buffers_f) {
+        if (buffer.threadIdentity_f.id == id) {
+            return &buffer;
         }
     }
     return nullptr;
-}
-
-/* static */
-void
-LoggerThread::ensure_initialized() {
-    if (This::instance_sf == nullptr) {
-        pican::panic("LoggerThread not initialized!");
-    }
 }
 
 }  // namespace pican::log

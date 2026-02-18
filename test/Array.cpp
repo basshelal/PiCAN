@@ -21,7 +21,7 @@ TEST(create) {
 
     Array<Element> array{block};
 
-    ASSERT_EQUAL(count, array.items_count());
+    ASSERT_EQUAL(count, array.length());
     ASSERT_EQUAL(block.address(), array.block().address());
     ASSERT_EQUAL(block.size_bytes(), array.block().size_bytes());
     ASSERT_EQUAL(count - 1, array.last_index());

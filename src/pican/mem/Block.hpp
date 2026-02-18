@@ -103,4 +103,4 @@ public:  // friends
     friend class Manager;
     friend class Arena;
 };
-}  // namespace pican::memory
+}  // namespace pican::mem

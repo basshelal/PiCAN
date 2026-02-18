@@ -1,29 +1,26 @@
 #pragma once
 
+#include "pican/BasicIterator.hpp"
 #include "pican/Contracts.hpp"
+#include "pican/Types.hpp"
 #include "pican/mem/Block.hpp"
 #include "pican/mem/Utils.hpp"
 
 namespace pican {
 template<typename TP>
 class Array {
-private:  // types
-    using Block = pican::mem::Block;
-
-public:  // types
-    using Index = std::size_t;
-    using Count = std::size_t;
-
 private:  // constants
     static constexpr SizeBytes TP_SIZE = sizeof(TP);
-    static constexpr Alignment TP_ALIGNMENT = alignof(TP);
 
 private:  // fields
-    pican::mem::Block block_f;
-    Count itemsCount_f;
+    mem::Block block_f;
+    Count length_f;
 
 public:  // constructors
-    explicit Array(const pican::mem::Block& block) : block_f{block}, itemsCount_f{block.size_bytes() / TP_SIZE} {
+    explicit Array(const mem::Block& block) : block_f{block}, length_f{block.size_bytes() / TP_SIZE} {
+    }
+
+    explicit Array(TP* ptr, SizeBytes sizeBytes) : Array{mem::Block{mem::ptr_to_address(ptr), sizeBytes}} {
     }
 
 public:  // copy-control
@@ -42,47 +39,84 @@ public:  // copy-control
 public:  // member functions
     [[nodiscard]]
     TP*
-    get_at_ptr(Index index) const& {
-        CONTRACTS_PRECONDITION(index < this->itemsCount_f);
+    get_ptr(Index index) const& {
+        CONTRACTS_PRECONDITION(index < this->length_f);
         return this->block_f.ptr_at_offset<TP>(index * TP_SIZE);
     }
 
     [[nodiscard]]
     const TP&
-    get_at(Index index) const& {
-        CONTRACTS_PRECONDITION(index < this->itemsCount_f);
-        return *this->get_at_ptr(index);
+    get(Index index) const& {
+        return *this->get_ptr(index);
+    }
+
+    [[nodiscard]]
+    TP&
+    get(Index index) & {
+        return *this->get_ptr(index);
     }
 
     void
-    set_at(Index index, const TP& val) & {
-        CONTRACTS_PRECONDITION(index < this->itemsCount_f);
-        *this->block_f.ptr_at_offset<TP>(index * TP_SIZE) = val;
+    set(Index index, const TP& val) & {
+        *this->get_ptr(index) = val;
     }
 
     void
-    set_at_move(Index index, TP&& val) & {
-        CONTRACTS_PRECONDITION(index < this->itemsCount_f);
-        *this->block_f.ptr_at_offset<TP>(index * TP_SIZE) = std::move(val);
+    set_move(Index index, TP&& val) & {
+        *this->get_ptr(index) = std::move(val);
+    }
+
+public:  // operators
+    TP&
+    operator[](Index index) & {
+        return *this->get_ptr(index);
+    }
+
+    const TP&
+    operator[](Index index) const& {
+        return *this->get_ptr(index);
+    }
+
+public:  // iterators
+    BasicIterator<TP>
+    begin() const& {
+        return BasicIterator<TP>{this->get_ptr(0)};
+    }
+
+    BasicIterator<TP>
+    end() const& {
+        return BasicIterator<TP>{this->block_f.ptr_at_offset<TP>(this->length_f * TP_SIZE)};
     }
 
 public:  // getters
     [[nodiscard]]
-    inline const pican::mem::Block&
+    const pican::mem::Block&
     block() const& {
         return this->block_f;
     }
 
     [[nodiscard]]
-    inline Count
-    items_count() const& {
-        return this->itemsCount_f;
+    Address
+    address() const& {
+        return this->block_f.address();
     }
 
     [[nodiscard]]
-    inline Index
+    TP*
+    ptr() const& {
+        return this->block_f.address_to_ptr<TP>();
+    }
+
+    [[nodiscard]]
+    Count
+    length() const& {
+        return this->length_f;
+    }
+
+    [[nodiscard]]
+    Index
     last_index() const& {
-        return this->itemsCount_f - 1;
+        return this->length_f - 1;
     }
 };
 }  // namespace pican

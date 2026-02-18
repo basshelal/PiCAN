@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string_view>
+
 #include "pican/Types.hpp"
+#include "pican/Utils.hpp"
 
 namespace pican::log {
 
@@ -20,13 +23,13 @@ inline constexpr std::string_view
 level_to_string(const Level& level) {
     switch (level) {
         case Level::NONE:
-            return "NONE";
+            return "NONE   ";
         case Level::ERROR:
-            return "ERROR";
+            return "ERROR  ";
         case Level::WARN:
-            return "WARN";
+            return "WARN   ";
         case Level::INFO:
-            return "INFO";
+            return "INFO   ";
         case Level::VERBOSE:
             return "VERBOSE";
     }

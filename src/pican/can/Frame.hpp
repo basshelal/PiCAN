@@ -1,45 +1,69 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
-#include <sstream>
 
-#include <fmt/format.h>
+#include <linux/can.h>
 
 namespace pican::can {
 constexpr std::size_t FRAME_DATA_SIZE = 8;
 
 using FrameID = canid_t;
-using FrameData = std::array<std::uint8_t, FRAME_DATA_SIZE>;
+using FrameLength = std::uint8_t;
+using FrameByte = std::uint8_t;
+using FrameData = std::array<FrameByte, FRAME_DATA_SIZE>;
+using LinuxCanFrame = struct can_frame;
 
 class Frame {
-public:  // fields
-    pican::can::FrameID id_f;
-    std::uint8_t length;
-    pican::can::FrameData data_f;
+private:  // fields
+    FrameID id_f;
+    FrameLength length_f;
+    FrameData data_f;
+
+private:  // constructors
+    Frame() = default;
+
+public:  // lifetime
+    Frame(const Frame& rhs) = default;
+
+    Frame(Frame&& rhs) noexcept = default;
+
+    Frame&
+    operator=(const Frame& rhs) & = default;
+
+    Frame&
+    operator=(Frame&& rhs) & noexcept = default;
+
+    ~Frame() = default;
+
+public:  // getters
+    [[nodiscard]]
+    inline FrameID
+    id() const& {
+        return this->id_f;
+    }
+
+    [[nodiscard]]
+    inline FrameLength
+    length() const& {
+        return this->length_f;
+    }
+
+    [[nodiscard]]
+    inline const FrameData&
+    data() const& {
+        return this->data_f;
+    }
 
 public:  // functions
     void
-    set_from_linux_can_frame(const struct can_frame& linuxFrame) {
-        this->id_f = linuxFrame.can_id;
-        this->length = ::std::min(static_cast<std::size_t>(linuxFrame.len), FRAME_DATA_SIZE);
-        for (std::size_t i = 0; i < this->length; ++i) {
-            this->data_f[i] = linuxFrame.data[i];
-        }
-    }
+    set_from_linux_can_frame(const LinuxCanFrame& linuxFrame) &;
 
-public:  // friends
-    friend std::string
-    to_string(const Frame& frame) {
-        std::stringstream ss;
-        ss << "Frame: " << fmt::format("0x{:04X}", frame.id_f) << " : [";
-        for (std::size_t i = 0; i < frame.length; ++i) {
-            ss << fmt::format("{:02X}", frame.data_f[i]);
-            if (i != static_cast<std::size_t>(frame.length) - 1) {
-                ss << ", ";
-            }
-        }
-        ss << "]";
-        return ss.str();
-    }
+public:  // static factories
+    [[nodiscard]]
+    static Frame
+    from_linux_can_frame(const LinuxCanFrame& linuxFrame);
+public: // friends
+    friend class CanThread;
 };
 }  // namespace pican::can

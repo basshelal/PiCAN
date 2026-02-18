@@ -61,7 +61,7 @@ public:  // constructors
         const pican::Array<TP>& array, RingBufferOverflowBehavior overflowBehavior, OverflowCallback overflowCallback,
         UnderflowCallback underflowCallback, OverwriteCallback overwriteCallback, FailedReadCallback failedReadCallback
     ) :
-        array_f{array}, itemsCount_f{array.items_count() - 1}, overflowBehavior_f{overflowBehavior},
+        array_f{array}, itemsCount_f{array.length() - 1}, overflowBehavior_f{overflowBehavior},
         overflowCallback_f{overflowCallback}, underflowCallback_f{underflowCallback},
         overwriteCallback_f{overwriteCallback}, failedReadCallback_f{failedReadCallback}, writeIndex_f{0},
         readIndex_f{0}, itemsWritten_f{0} {
@@ -152,7 +152,7 @@ public:  // member functions
             }
         }
 
-        this->array_f.set_at(writeIndex, val);  // uses copy assignment
+        this->array_f.set(writeIndex, val);  // uses copy assignment
 
         if (this->overflowBehavior_f == RingBufferOverflowBehavior::OVERWRITE_OLDEST) {
             this->overwriteCallback_f(*this);
@@ -180,7 +180,7 @@ public:  // member functions
         bool writeHappened = false;
         TP* popped = nullptr;
         do {
-            popped = this->array_f.get_at_ptr(readIndex);
+            popped = this->array_f.get_ptr(readIndex);
 
             const Index latestWriteIndex = this->writeIndex_f.load(std::memory_order_relaxed);
             writeHappened = latestWriteIndex != writeIndex;

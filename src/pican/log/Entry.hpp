@@ -7,15 +7,12 @@
 
 namespace pican::log {
 
-// TODO @basshelal Thu 05-Feb-2026 : Needs level, thread id (kernel!), date time (or something that can
-//  compute date time, user formatted message, the formatting into the log format and printing
-//  will be done by the logger thread to make a log call as cheap as possible from any calling thread
 class Entry {
 public:  // types
     using Timestamp = std::chrono::system_clock::time_point;
 
 private:  // fields
-    Level level_f;
+    log::Level level_f;
     Timestamp timestamp_f;
     std::array<char, MESSAGE_MAX_SIZE> message_f;
 
@@ -25,7 +22,7 @@ public:  // constructor
 
 public:  // getters
     [[nodiscard]]
-    const Level&
+    const log::Level&
     level() const& {
         return this->level_f;
     }
@@ -40,6 +37,12 @@ public:  // getters
     const std::array<char, MESSAGE_MAX_SIZE>&
     message() const& {
         return this->message_f;
+    }
+
+    [[nodiscard]]
+    char*
+    message_buffer() & {
+        return this->message_f.data();
     }
 
     // friends

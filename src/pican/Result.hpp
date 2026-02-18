@@ -95,6 +95,12 @@ public:  // factory functions
 
     [[nodiscard]]
     static Result
+    success_default() {
+        return Result{SuccessConstructorParameter{}};
+    }
+
+    [[nodiscard]]
+    static Result
     failure_by_copy(const FailureType& f) {
         return Result{f, FailureConstructorParameter{}};
     }
@@ -110,6 +116,12 @@ public:  // factory functions
     static Result
     failure_emplace(Args_TP&&... args) {
         return Result{FailureConstructorParameter(), args...};
+    }
+
+    [[nodiscard]]
+    static Result
+    failure_default() {
+        return Result{FailureConstructorParameter()};
     }
 
 public:  // member functions
@@ -217,5 +229,8 @@ public:  // member functions
     const FailureType&
     failure_value_or_else(const FailureType& defaultValue) && = delete;
 };
+
+template<typename Failure_TP>
+using SimpleResult = Result<nullptr_t, Failure_TP>;
 
 }  // namespace pican

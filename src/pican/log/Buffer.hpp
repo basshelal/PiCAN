@@ -8,25 +8,41 @@ namespace pican::log {
 
 class Buffer {
 private:  // fields
+    ThreadIdentity threadIdentity_f;
     RingBuffer<Entry> entries_f;
-    ThreadId threadId_f;
 
 public:  // constructor
-    Buffer(const Array<Entry>& array);
+    Buffer(const Array<Entry>& array) :
+        threadIdentity_f{}, entries_f{array, RingBufferOverflowBehavior::OVERWRITE_OLDEST} {
+    }
+
+public:  // lifetime
+    Buffer(const Buffer& rhs) = delete;
+
+    Buffer(Buffer&& rhs) noexcept = delete;
+
+    Buffer&
+    operator=(const Buffer& rhs) & = delete;
+
+    Buffer&
+    operator=(Buffer&& rhs) & noexcept = delete;
+
+    ~Buffer() = default;
 
 public:  // getters
     [[nodiscard]]
-    ThreadId
-    thread_id() const& {
-        return this->threadId_f;
+    ThreadIdentity
+    thread_identity() const& {
+        return this->threadIdentity_f;
     }
 
     [[nodiscard]]
-    RingBuffer<Entry>&
-    entries() & {
+    const RingBuffer<Entry>&
+    entries() const& {
         return this->entries_f;
     }
-    public: // friends
+
+public:  // friends
     friend class LoggerThread;
 };
 

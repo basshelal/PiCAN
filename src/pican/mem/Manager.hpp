@@ -54,6 +54,13 @@ public:  // member functions
     static Block
     get_block(SizeBytes size, Alignment alignment = pican::mem::SYSTEM_DEFAULT_ALIGNMENT);
 
+    template<typename TP>
+    [[nodiscard]]
+    static inline Block
+    get_block_for() {
+        return This::get_block(sizeof(TP), alignof(TP));
+    }
+
     [[nodiscard]]
     static Arena
     get_arena(SizeBytes size, Alignment alignment = pican::mem::SYSTEM_DEFAULT_ALIGNMENT);

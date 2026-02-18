@@ -19,17 +19,17 @@ Thread::pthread_runnable(void* arg) {
 
     thread->invoker_f(thread->callable_f, thread->callableArg_f);
 
-    thread->state_f.store(State::STOPPED, std::memory_order_release);
+    thread->state_f.store(ThreadState::STOPPED, std::memory_order_release);
     return nullptr;
 }
 
 void
 Thread::start() {
-    const State oldState = this->state();
-    if (oldState == State::RUNNING) {
+    const ThreadState oldState = this->state();
+    if (oldState == ThreadState::RUNNING) {
         return;
     }
-    this->state_f.store(State::RUNNING, std::memory_order_release);
+    this->state_f.store(ThreadState::RUNNING, std::memory_order_release);
 
     ::pthread_attr_init(&this->pthreadAttr_f);
 
@@ -43,7 +43,7 @@ Thread::start() {
 
 void
 Thread::stop() {
-    if (this->state() != State::RUNNING) {
+    if (this->state() != ThreadState::RUNNING) {
         return;
     }
 
@@ -53,14 +53,20 @@ Thread::stop() {
     // This is crucial to prevent zombie threads and reclaim stack memory.
     ::pthread_join(this->pthread_f, nullptr);
 
-    this->state_f.store(State::STOPPED, std::memory_order_release);
+    this->state_f.store(ThreadState::STOPPED, std::memory_order_release);
     this->pthread_f = 0;
 }
 
 /* static */
 ThreadId
-Thread::calling_thread() {
+Thread::calling_thread_id() {
     return ::gettid();
+}
+
+/* static */
+ThreadId
+Thread::main_thread_id() {
+    return ::getpid();
 }
 
 }  // namespace pican

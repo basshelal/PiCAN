@@ -31,6 +31,9 @@
   * Network Thread: Pushes packets or messages over the network, can be merged into Disk Thread
   * GPS Thread?
   * Definitely need CAN and UI Threads to be separate, the others can maybe be merged into 1 Thread if necessary
+  * Main thread is a watchdog" to ensure that all threads are running and actually doing work (through a heartbeat)
+    if a thread is killed or hanging, then we can print the stacktrace and die gracefully to let Linux restart the 
+    application
 * Look into sanitizers and valgrind and other tools like that
 * Yocto docker, qemu stuff which then needs better scripts and CMake targets and presets and builds
 * Pi needs a watchdog to watch that PiCAN is running and if not logs and sends this to the network and re-starts it

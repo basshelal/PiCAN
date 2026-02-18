@@ -68,6 +68,31 @@ todo(const std::string_view& message) {
     pican::panic(message);
 }
 
+constexpr std::uint64_t FNV_OFFSET = 2'166'136'261u;
+constexpr std::uint64_t FNV_PRIME = 16'777'619u;
+
+// use Fowler-Noll-Vo (FNV-1a) hashing algorithm
+inline std::uint64_t
+fnv1a_bytes(const void* data, std::size_t len) {
+    const std::uint8_t* ptr = static_cast<const std::uint8_t*>(data);
+    std::uint64_t hash = FNV_OFFSET;
+
+    for (std::size_t i = 0; i < len; ++i) {
+        hash ^= ptr[i];
+        hash *= FNV_PRIME;
+    }
+    return hash;
+}
+
+template<typename TP>
+Index
+hash(const TP& val) {
+    // Check if it's safe to hash raw bytes (Standard Layout)
+    static_assert(std::is_standard_layout<TP>::value, "Must be Standard Layout!");
+
+    return pican::fnv1a_bytes(&val, sizeof(TP));
+}
+
 }  // namespace pican
 
 #define TODO(Message) pican::todo(Message)

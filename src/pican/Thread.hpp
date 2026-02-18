@@ -3,55 +3,87 @@
 #include <atomic>
 #include <string_view>
 
-#include <pican/Types.hpp>
 #include <pthread.h>
 #include <unistd.h>
 
+#include "pican/Types.hpp"
+
 namespace pican {
 
-// TODO @basshelal Thu 05-Feb-2026 : ThreadId is the pthread id which is basically just the pthread_t,
-//  useless except with pthread function contexts, KernelThreadId is more generally useful and should
-//  be renamed to ThreadId, this will actually give us the Linux thread id but can only be obtained by
-//  being called from the thread itself, using that, we should also allow for thread lookup by id or name
-//  and get one from the other
 using ProcessId = pid_t;
 using ThreadId = ProcessId;
 using ThreadName = std::string_view;
+using ThreadCounterValue = std::uint64_t;
+using ThreadCounter = std::atomic<ThreadCounterValue>;
+
+struct ThreadIdentity {
+    ThreadId id;
+    ThreadName name;
+
+public:  // lifetime
+    ThreadIdentity(const ThreadIdentity& rhs) = default;
+
+    ThreadIdentity(ThreadIdentity&& rhs) noexcept = default;
+
+    ThreadIdentity&
+    operator=(const ThreadIdentity& rhs) & = default;
+
+    ThreadIdentity&
+    operator=(ThreadIdentity&& rhs) & noexcept = default;
+
+    ~ThreadIdentity() = default;
+
+public:  // operators
+    bool
+    operator==(const ThreadIdentity& rhs) const {
+        return this->id == rhs.id && this->name == rhs.name;
+    }
+};
+
+enum class ThreadState : std::uint8_t {
+    CREATED,
+    RUNNING,
+    STOPPED,
+};
 
 class Thread {
 public:  // types
     template<typename CallableArg_TP>
     using Callable = void (*)(CallableArg_TP* arg);
 
-    enum class State : std::uint8_t {
-        CREATED,
-        RUNNING,
-        STOPPED,
-    };
+    using CallableNoArg = void (*)();
 
 private:  // types
     using ErasedCallable = void (*)(void* arg);
     using Invoker = void (*)(ErasedCallable callable, void* arg);
 
 public:  // fields
-    ThreadName name_f;
     Invoker invoker_f;
     ErasedCallable callable_f;
     void* callableArg_f;
-    std::atomic<State> state_f;
+    std::atomic<ThreadState> state_f;
     pthread_t pthread_f;
     pthread_attr_t pthreadAttr_f;
     ThreadId threadId_f;
 
 public:  // constructors
     template<typename CallableArg_TP>
-    Thread(const ThreadName& name, const Callable<CallableArg_TP>& callable, CallableArg_TP* arg) :
-        name_f{name}, callable_f{reinterpret_cast<ErasedCallable>(callable)}, callableArg_f{arg},
-        state_f{State::CREATED}, pthread_f{0}, pthreadAttr_f{}, threadId_f{0} {
+    Thread(const Callable<CallableArg_TP>& callable, CallableArg_TP* arg) :
+        callable_f{reinterpret_cast<ErasedCallable>(callable)}, callableArg_f{arg}, state_f{ThreadState::CREATED},
+        pthread_f{0}, pthreadAttr_f{}, threadId_f{0} {
         this->invoker_f = [](ErasedCallable erasedCallable, void* erasedArg) -> void {
             Callable<CallableArg_TP> castCallable = reinterpret_cast<Callable<CallableArg_TP>>(erasedCallable);
             CallableArg_TP* castArg = reinterpret_cast<CallableArg_TP*>(erasedArg);
             castCallable(castArg);
+        };
+    }
+
+    Thread(const CallableNoArg& callable) :
+        callable_f{reinterpret_cast<ErasedCallable>(callable)}, callableArg_f{nullptr}, state_f{ThreadState::CREATED},
+        pthread_f{0}, pthreadAttr_f{}, threadId_f{0} {
+        this->invoker_f = [](ErasedCallable erasedCallable, void* erasedArg) -> void {
+            CallableNoArg castCallable = reinterpret_cast<CallableNoArg>(erasedCallable);
+            castCallable();
         };
     }
 
@@ -70,13 +102,7 @@ public:  // copy-control
 
 public:  // getters
     [[nodiscard]]
-    const ThreadName&
-    name() const& {
-        return this->name_f;
-    }
-
-    [[nodiscard]]
-    State
+    ThreadState
     state() const& {
         return this->state_f.load(std::memory_order_acquire);
     }
@@ -84,7 +110,7 @@ public:  // getters
     [[nodiscard]]
     bool
     is_running() const& {
-        return this->state() == State::RUNNING;
+        return this->state() == ThreadState::RUNNING;
     }
 
     [[nodiscard]]
@@ -107,7 +133,11 @@ private:  // member functions
 public:  // static functions
     [[nodiscard]]
     static ThreadId
-    calling_thread();
+    calling_thread_id();
+
+    [[nodiscard]]
+    static ThreadId
+    main_thread_id();
 };
 
 }  // namespace pican
