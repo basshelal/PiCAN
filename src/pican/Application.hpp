@@ -91,41 +91,5 @@ private:  // helper functions
     [[nodiscard]]
     static Application&
     get_instance();
-
-public:  // friends
-    template<typename... Args_TP>
-    inline friend void
-    log_function(pican::log::Level level, fmt::format_string<Args_TP...> format, Args_TP&&... args);
 };
-
-template<typename... Args_TP>
-inline void
-log_function(pican::log::Level level, fmt::format_string<Args_TP...> format, Args_TP&&... args) {
-    Application& application = Application::get_instance();
-    application.loggerThread_f->log(level, format, std::forward<Args_TP>(args)...);
-}
-
-template<typename... Args_TP>
-inline void
-log_error(fmt::format_string<Args_TP...> format, Args_TP&&... args) {
-    pican::log_function(pican::log::Level::ERROR, format, std::forward<Args_TP>(args)...);
-}
-
-template<typename... Args_TP>
-inline void
-log_warn(fmt::format_string<Args_TP...> format, Args_TP&&... args) {
-    pican::log_function(pican::log::Level::WARN, format, std::forward<Args_TP>(args)...);
-}
-
-template<typename... Args_TP>
-inline void
-log_info(fmt::format_string<Args_TP...> format, Args_TP&&... args) {
-    pican::log_function(pican::log::Level::INFO, format, std::forward<Args_TP>(args)...);
-}
-
-template<typename... Args_TP>
-inline void
-log_verbose(fmt::format_string<Args_TP...> format, Args_TP&&... args) {
-    pican::log_function(pican::log::Level::VERBOSE, format, std::forward<Args_TP>(args)...);
-}
 }  // namespace pican

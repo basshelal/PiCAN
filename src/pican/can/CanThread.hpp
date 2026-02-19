@@ -63,6 +63,9 @@ public:  // member functions
     void
     start() &;
 
+    void
+    stop() &;
+
     [[nodiscard]]
     virtual const ThreadIdentity&
     thread_identity() const& override {

@@ -91,7 +91,7 @@ public:  // iterators
     BasicIterator<TP>
     end() const& {
         const mem::Block& block = this->array_f.block();
-        return BasicIterator<TP>{block.ptr_at_offset<TP>(this->size_f)};
+        return BasicIterator<TP>{block.ptr_at_offset<TP>(this->size_f * sizeof(TP))};
     }
 
 public:  // getters

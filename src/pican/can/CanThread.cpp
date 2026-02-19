@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "pican/Application.hpp"
+#include "pican/Log.hpp"
 #include "pican/Contracts.hpp"
 #include "pican/Result.hpp"
 #include "pican/log/Buffer.hpp"
@@ -21,8 +21,8 @@
 namespace pican::can {
 
 CanThread::CanThread(InterfaceName interfaceName, Array<Event> uiRingBufferArray, Array<Event> netRingBufferArray) :
-    interfaceName_f{interfaceName}, socketFd_f{0}, thread_f{&This::runnable, this}, isRunning_f{false},
-    identity_f{0, "CanThread"}, uiEventBuffer_f{uiRingBufferArray, RingBufferOverflowBehavior::OVERWRITE_OLDEST},
+    interfaceName_f{interfaceName}, socketFd_f{0}, thread_f{"Can",&This::runnable, this}, isRunning_f{false},
+    identity_f{0, "Can"}, uiEventBuffer_f{uiRingBufferArray, RingBufferOverflowBehavior::OVERWRITE_OLDEST},
     netEventBuffer_f{netRingBufferArray, RingBufferOverflowBehavior::OVERWRITE_OLDEST}, threadCounter_f{0} {
     int socketFd = ::socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socketFd < 0) {
@@ -84,7 +84,17 @@ CanThread::start() & {
     if (this->thread_f.is_running()) {
         return;
     }
+    this->isRunning_f.store(true, std::memory_order_relaxed);
     this->thread_f.start();
+}
+
+void
+CanThread::stop() & {
+    if (!this->thread_f.is_running()) {
+        return;
+    }
+    this->isRunning_f.store(false, std::memory_order_relaxed);
+    this->thread_f.stop();
 }
 
 /* static */

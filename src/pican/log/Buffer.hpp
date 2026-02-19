@@ -12,6 +12,7 @@ private:  // fields
     RingBuffer<Entry> entries_f;
 
 public:  // constructor
+    explicit
     Buffer(const Array<Entry>& array) :
         threadIdentity_f{}, entries_f{array, RingBufferOverflowBehavior::OVERWRITE_OLDEST} {
     }
@@ -31,7 +32,7 @@ public:  // lifetime
 
 public:  // getters
     [[nodiscard]]
-    ThreadIdentity
+    const ThreadIdentity&
     thread_identity() const& {
         return this->threadIdentity_f;
     }

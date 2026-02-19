@@ -120,18 +120,6 @@ initialize(char** argv) {
 }
 
 void
-signal_handler(int signal) {
-    int fd = STDERR_FILENO;
-    print_string("Signal: ", fd);
-    print_string(strsignal(signal), fd);
-
-    print_string("\nStack Trace:\n", fd);
-    stacktrace::print_stacktrace();
-
-    _exit(1);  // Immediate exit, do not run destructors
-}
-
-void
 print_stacktrace(std::FILE* file, int skipFrames) {
     const int fd = ::fileno(file);
     CallbackData callbackData{fd};

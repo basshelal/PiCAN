@@ -10,6 +10,9 @@
 
 namespace pican {
 class EventFD {
+private:  // constants
+    static constexpr int NULL_FD = -1;
+
 public:  // types
     enum class Mode : std::uint8_t {
         NOTIFY,
@@ -21,18 +24,18 @@ private:  // fields
     Mode mode_f;
 
 public:  // constructors
-    EventFD(Mode mode);
+    explicit EventFD(Mode mode);
 
-public:  // copy-control
+public:  // lifetime
     EventFD(const EventFD& rhs) = delete;
 
-    EventFD(EventFD&& rhs) noexcept = delete;
+    EventFD(EventFD&& rhs) noexcept;
 
     EventFD&
     operator=(const EventFD& rhs) & = delete;
 
     EventFD&
-    operator=(EventFD&& rhs) & noexcept = delete;
+    operator=(EventFD&& rhs) & noexcept;
 
     ~EventFD();
 
@@ -50,7 +53,7 @@ public:  // getters
     [[nodiscard]]
     inline bool
     is_open() const& {
-        return this->fd_f != -1;
+        return this->fd_f != NULL_FD;
     }
 };
 }  // namespace pican

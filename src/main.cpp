@@ -1,6 +1,7 @@
 #include <csignal>
 
 #include <magic_enum/magic_enum.hpp>
+#include <pican/Log.hpp>
 #include <unistd.h>
 
 #include "noheap/NoHeap.hpp"
@@ -19,10 +20,10 @@ void
 environment_initialize(int argc, char** argv) {
     // stacktrace needs nothing else and needs to be initialized first
     stacktrace::initialize(argv);
-    ::signal(SIGSEGV, ::stacktrace::signal_handler);
-    ::signal(SIGILL, ::stacktrace::signal_handler);
-    ::signal(SIGABRT, ::stacktrace::signal_handler);
-    ::signal(SIGBUS, ::stacktrace::signal_handler);
+    ::signal(SIGSEGV, cleanup_by_signal);
+    ::signal(SIGILL, cleanup_by_signal);
+    ::signal(SIGABRT,cleanup_by_signal);
+    ::signal(SIGBUS, cleanup_by_signal);
 
     ::signal(SIGTERM, cleanup_by_signal);
     ::signal(SIGHUP, cleanup_by_signal);
@@ -58,6 +59,7 @@ cleanup() {
 
 void
 cleanup_by_signal(int signal) {
+    pican::log_error("Received signal: SIG{}", sigabbrev_np(signal));
     ::stacktrace::print_stacktrace();
     cleanup();
 }

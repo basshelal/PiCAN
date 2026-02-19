@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#include <fmt/format.h>
+
 #include "pican/Thread.hpp"
 #include "pican/log/Utils.hpp"
 
@@ -40,6 +42,12 @@ public:  // getters
     }
 
     [[nodiscard]]
+    const char*
+    message_buffer() const& {
+        return this->message_f.data();
+    }
+
+    [[nodiscard]]
     char*
     message_buffer() & {
         return this->message_f.data();
@@ -48,4 +56,26 @@ public:  // getters
     // friends
     friend class LoggerThread;
 };
+
+template<typename... Args_TP>
+[[nodiscard]]
+inline Entry
+format_to_entry(Level level, fmt::format_string<Args_TP...> format, Args_TP&&... args) {
+    Entry entry{level};
+    char* messageBuffer = entry.message_buffer();
+
+    fmt::format_to_n_result<char*> result =
+        fmt::format_to_n(messageBuffer, MESSAGE_MAX_SIZE, format, std::forward<Args_TP>(args)...);
+
+    std::size_t writeCount = result.size;
+    if (writeCount < MESSAGE_MAX_SIZE) {
+        messageBuffer[writeCount] = '\0';
+    } else {
+        // entry was truncated!
+        messageBuffer[MESSAGE_MAX_SIZE] = MESSAGE_TRUNCATED_CHAR;
+        messageBuffer[entry.message().size() - 1] = NULL_TERMINATOR_CHAR;
+    }
+
+    return entry;
+}
 }  // namespace pican::log

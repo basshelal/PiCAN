@@ -1,8 +1,10 @@
 #include "pican/Application.hpp"
 
+#include <magic_enum/magic_enum.hpp>
 #include <time.h>
 
 #include "pican/File.hpp"
+#include "pican/Log.hpp"
 #include "pican/can/CanThread.hpp"
 #include "pican/mem/Manager.hpp"
 
@@ -33,8 +35,22 @@ Application::initialize() {
 
     // create LoggerThread
     mem::Block loggerThreadBlock = mem::Manager::get_block_for<log::LoggerThread>();
-    log::LoggerThread* loggerThreadPtr = loggerThreadBlock.address_to_ptr<log::LoggerThread>();
-    instance.loggerThread_f = new (loggerThreadPtr) log::LoggerThread{log::Level::VERBOSE, 8, 8, 1'024, "LoggerThread"};
+
+    pican::Result<log::LoggerThread*, log::LoggerThread::Error> loggerThreadResult =
+        log::LoggerThread::create(loggerThreadBlock, log::Level::VERBOSE, "Logger", 8, 1'024);
+
+    if (loggerThreadResult.is_failure()) {
+        [[maybe_unused]]
+        log::LoggerThread::Error error = loggerThreadResult.failure_value_or_panic();
+        pican::panic("Failed!");
+    }
+    log::LoggerThread* loggerThreadPtr = loggerThreadResult.success_value_or_panic();
+    CONTRACTS_ASSERT(loggerThreadPtr == loggerThreadBlock.address_to_ptr<log::LoggerThread>());
+    instance.loggerThread_f = loggerThreadPtr;
+
+    pican::log_function_g = [loggerThreadPtr](const log::Entry& entry) -> void {
+        loggerThreadPtr->log_entry(entry);
+    };
 
     instance.threads_f.add_copy(instance.loggerThread_f);
 
@@ -85,6 +101,11 @@ Application::start() {
 /* static */
 void
 Application::stop() {
+    Application& instance = This::get_instance();
+    instance.loggerThread_f->stop();
+    instance.canThread_f->stop();
+
+    instance.state_f = State::STOPPED;
 }
 
 /* static */
@@ -95,7 +116,9 @@ Application::loop() {
     for (ThreadCounterValue& counter : counters) {
         counter = 0;
     }
-    while (instance.state_f == State::RUNNING) {
+    while (instance.state_f != State::STOPPED) {
+        instance.state_f = State::RUNNING;
+        pican::log_info("Looping!");
         for (Count i = 0; i < instance.threads_f.size(); ++i) {
             const IApplicationThread* thread = instance.threads_f[i];
             const ThreadCounterValue oldValue = counters[i];
@@ -110,8 +133,9 @@ Application::loop() {
         //  a thread is hanging, log it, print the stacktrace and exit gracefully by means of cleanup, maybe by just
         //  sending a signal? We need to dump as much info as possible though
 
-        TimeSpec timespec{0, config::MAIN_LOOP_SLEEP_MILLISECONDS * 1'000'000};
-        ::nanosleep(&timespec, nullptr);
+        instance.state_f = State::SLEEPING;
+        pican::log_info("Sleeping!");
+        ::usleep(config::MAIN_LOOP_SLEEP_MILLISECONDS * 1'000);
     }
 }
 
