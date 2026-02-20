@@ -72,7 +72,7 @@ operator new(std::size_t size) {
     }
     void* p = std::malloc(size);
     if (p == nullptr) {
-        throw std::bad_alloc();
+        print_stack_trace_and_exit();
     }
     return p;
 }
@@ -84,7 +84,7 @@ operator new[](std::size_t size) {
     }
     void* p = std::malloc(size);
     if (p == nullptr) {
-        throw std::bad_alloc();
+        print_stack_trace_and_exit();
     }
     return p;
 }
@@ -96,7 +96,7 @@ operator new(std::size_t size, std::align_val_t align) {
     }
     void* p = std::aligned_alloc(static_cast<size_t>(align), size);
     if (p == nullptr) {
-        throw std::bad_alloc();
+        print_stack_trace_and_exit();
     }
     return p;
 }
@@ -108,7 +108,7 @@ operator new[](std::size_t size, std::align_val_t align) {
     }
     void* p = std::aligned_alloc(static_cast<size_t>(align), size);
     if (p == nullptr) {
-        throw std::bad_alloc();
+        print_stack_trace_and_exit();
     }
     return p;
 }

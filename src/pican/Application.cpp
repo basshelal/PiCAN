@@ -37,7 +37,7 @@ Application::initialize() {
     mem::Block loggerThreadBlock = mem::Manager::get_block_for<log::LoggerThread>();
 
     pican::Result<log::LoggerThread*, log::LoggerThread::Error> loggerThreadResult =
-        log::LoggerThread::create(loggerThreadBlock, log::Level::VERBOSE, "Logger", 8, 1'024);
+        log::LoggerThread::create(loggerThreadBlock, log::Level::VERBOSE, "log", 8, 1'024);
 
     if (loggerThreadResult.is_failure()) {
         [[maybe_unused]]
@@ -69,17 +69,29 @@ Application::initialize() {
 
     pican::log_info("stderr sink added");
 
-    const ThreadIdentity mainThreadIdentity = ThreadIdentity{Thread::main_thread_id(), "Main"};
+    const ThreadIdentity mainThreadIdentity = ThreadIdentity{"main", Thread::calling_thread_id()};
     [[maybe_unused]]
     auto res3 = instance.loggerThread_f->register_thread(mainThreadIdentity);
 
     // create CanThread
     mem::Block canThreadBlock = mem::Manager::get_block_for<can::CanThread>();
-    can::CanThread* canThreadPtr = canThreadBlock.address_to_ptr<can::CanThread>();
 
     Array<can::Event> uiRingBufferArray = mem::Manager::get_array<can::Event>(8'192);
     Array<can::Event> netRingBufferArray = mem::Manager::get_array<can::Event>(8'192);
-    instance.canThread_f = new (canThreadPtr) can::CanThread{"vcan0", uiRingBufferArray, netRingBufferArray};
+
+    pican::Result<can::CanThread*, can::CanThread::Error> canThreadResult = can::CanThread::create(
+        canThreadBlock, config::CAN_INTERFACE_NAME, "can", config::CAN_LINUX_BUFFER_SIZE,
+        config::CAN_THREAD_TIMEOUT_SECONDS, uiRingBufferArray, netRingBufferArray
+    );
+
+    if (canThreadResult.is_failure()) {
+        [[maybe_unused]]
+        can::CanThread::Error error = canThreadResult.failure_value_or_panic();
+        pican::panic("Failed!");
+    }
+    can::CanThread* canThreadPtr = canThreadResult.success_value_or_panic();
+    CONTRACTS_ASSERT(canThreadPtr == canThreadBlock.address_to_ptr<can::CanThread>());
+    instance.canThread_f = canThreadPtr;
 
     instance.threads_f.add_copy(instance.canThread_f);
 }
@@ -96,6 +108,11 @@ Application::start() {
     instance.canThread_f->start();
 
     instance.state_f = State::RUNNING;
+
+    [[maybe_unused]]
+    auto res0 = instance.loggerThread_f->register_thread(instance.loggerThread_f->thread_identity());
+    [[maybe_unused]]
+    auto res1 = instance.loggerThread_f->register_thread(instance.canThread_f->thread_identity());
 }
 
 /* static */
@@ -150,7 +167,7 @@ Application::calling_thread() {
             return identity;
         }
     }
-    return ThreadIdentity{Thread::main_thread_id(), "Main"};
+    return ThreadIdentity{"Main", Thread::main_thread_id()};
 }
 
 /* static */

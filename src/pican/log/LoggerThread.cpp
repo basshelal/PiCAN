@@ -2,33 +2,60 @@
 
 #include <fmt/format.h>
 #include <magic_enum/magic_enum.hpp>
-#include <pican/Config.hpp>
-#include <pican/EventFD.hpp>
 #include <unistd.h>
 
+#include "pican/Config.hpp"
+#include "pican/EventFD.hpp"
+#include "pican/Log.hpp"
 #include "pican/time/DateTime.hpp"
 
 namespace pican::log {
 
 LoggerThread::LoggerThread(log::Level level, ThreadName name, Array<log::Buffer> buffers, Array<log::Sink> sinks) :
     level_f{level}, buffers_f{buffers}, buffersCount_f{0}, sinks_f{sinks}, eventfd_f{EventFD::Mode::NOTIFY},
-    thread_f{name, &LoggerThread::runnable, this}, counter_f{0}, identity_f{-1, name} {
+    thread_f{name, &LoggerThread::runnable, this}, counter_f{0}, isRunning_f{false} {
 }
 
-void
+/* static */
+pican::Result<LoggerThread*, LoggerThread::Error>
+LoggerThread::create(mem::Block block, log::Level level, ThreadName name, Count sinkCount, Count bufferEntryCount) {
+    CONTRACTS_PRECONDITION(block.size_bytes() >= sizeof(LoggerThread));
+
+    Array<Buffer> buffers = mem::Manager::get_array<Buffer>(config::THREADS_COUNT);
+    // initialize buffers
+    for (Index i = 0; i < buffers.length(); ++i) {
+        Array<Entry> entries = mem::Manager::get_array<Entry>(bufferEntryCount);
+        Buffer* buffer = buffers.get_ptr(i);
+        buffer = new (buffer) Buffer{entries};
+    }
+    Array<Sink> sinks = mem::Manager::get_array<Sink>(sinkCount);
+
+    LoggerThread* thread = new (block.address_to_ptr<LoggerThread>()) LoggerThread{level, name, buffers, sinks};
+
+    CONTRACTS_ASSERT(thread != nullptr);
+
+    return pican::Result<LoggerThread*, LoggerThread::Error>::success_by_copy(thread);
+}
+
+ThreadState
 LoggerThread::start() & {
     if (this->thread_f.state() == ThreadState::RUNNING) {
-        return;
+        return this->thread_state();
     }
+    this->isRunning_f.store(true);
     this->thread_f.start();
+    return this->thread_state();
 }
 
-void
+ThreadState
 LoggerThread::stop() & {
     if (this->thread_f.state() == ThreadState::STOPPED) {
-        return;
+        return this->thread_state();
     }
+    this->isRunning_f.store(true);
+    this->eventfd_f.notify();
     this->thread_f.stop();
+    return this->thread_state();
 }
 
 ThreadState
@@ -43,7 +70,12 @@ LoggerThread::thread_counter_value() const& {
 
 const ThreadIdentity&
 LoggerThread::thread_identity() const& {
-    return this->identity_f;
+    return this->thread_f.identity_f;
+}
+
+const Thread&
+LoggerThread::backing_thread() const& {
+    return this->thread_f;
 }
 
 LoggerThread::Result
@@ -89,27 +121,6 @@ LoggerThread::log_entry(const Entry& entry) & {
     this->eventfd_f.notify();
 }
 
-/* static */
-pican::Result<LoggerThread*, LoggerThread::Error>
-LoggerThread::create(mem::Block block, log::Level level, ThreadName name, Count sinkCount, Count bufferEntryCount) {
-    CONTRACTS_PRECONDITION(block.size_bytes() >= sizeof(LoggerThread));
-
-    Array<Buffer> buffers = mem::Manager::get_array<Buffer>(config::THREADS_COUNT);
-    // initialize buffers
-    for (Index i = 0; i < buffers.length(); ++i) {
-        Array<Entry> entries = mem::Manager::get_array<Entry>(bufferEntryCount);
-        Buffer* buffer = buffers.get_ptr(i);
-        buffer = new (buffer) Buffer{entries};
-    }
-    Array<Sink> sinks = mem::Manager::get_array<Sink>(sinkCount);
-
-    LoggerThread* thread = new (block.address_to_ptr<LoggerThread>()) LoggerThread{level, name, buffers, sinks};
-
-    CONTRACTS_ASSERT(thread != nullptr);
-
-    return pican::Result<LoggerThread*, LoggerThread::Error>::success_by_copy(thread);
-}
-
 Buffer*
 LoggerThread::get_buffer_of_thread(const ThreadId& id) const& {
     for (Buffer& buffer : this->buffers_f) {
@@ -133,11 +144,15 @@ LoggerThread::runnable(LoggerThread* self) {
         dateTimeBufferSize + 1 + levelBufferSize + 1 + threadBufferSize + 1 + MESSAGE_MAX_SIZE;
     std::array<char, totalBufferSize> totalBuffer;
 
-    while (true) {
+    while (self->isRunning_f.load()) {
         self->counter_f.atomic().fetch_add(1, std::memory_order_relaxed);
         self->eventfd_f.wait_blocking();
+        if (!self->isRunning_f.load()) {
+            break;
+        }
 
-        for (Buffer& buffer : self->buffers_f) {
+        for (Count i = 0; i < self->buffersCount_f; ++i) {
+            Buffer& buffer = self->buffers_f[i];
             Count toPop = buffer.entries_f.size();
 
             while (toPop > 0) {
@@ -156,10 +171,14 @@ LoggerThread::runnable(LoggerThread* self) {
                     const time::DateTime dateTime = time::DateTime::from_time_point(entry.timestamp());
                     dateTime.format_into(dateTimeBuffer.data(), dateTimeBufferSize);
 
-                    const ThreadIdentity threadIdentity = buffer.thread_identity();
+                    const ThreadIdentity &threadIdentity = buffer.thread_identity();
 
+                    // TODO @basshelal Fri 20-Feb-2026 : Document the text limits in code somehow,
+                    //  Levels are 4 at most VERBOSE and ERROR will be automatically truncated
+                    //  Thread names are 4 at most because we can, longest will be "main"
+                    //  Thread IDs will be at most 8 digits, though I think we can get away with way less
                     fmt::format_to_n_result<char*> formatted = fmt::format_to_n(
-                        totalBuffer.data(), totalBufferSize, "{} {} {}:{} {}\n", dateTimeBuffer.data(),
+                        totalBuffer.data(), totalBufferSize, "{} {:<4.4} {:<4}:{:<8} {}\n", dateTimeBuffer.data(),
                         level_to_string(entry.level()), threadIdentity.name, threadIdentity.id, entry.message_buffer()
                     );
 

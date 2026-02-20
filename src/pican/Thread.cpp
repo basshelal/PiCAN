@@ -6,7 +6,7 @@ namespace pican {
 
 Thread::Thread(ThreadName name, const CallableNoArg& callable) :
     callable_f{reinterpret_cast<ErasedCallable>(callable)}, callableArg_f{nullptr}, state_f{ThreadState::CREATED},
-    pthread_f{0}, pthreadAttr_f{}, threadId_f{0}, name_f{name} {
+    pthread_f{0}, pthreadAttr_f{}, identity_f{name} {
     this->invoker_f = [](ErasedCallable erasedCallable, void* erasedArg) -> void {
         CallableNoArg castCallable = reinterpret_cast<CallableNoArg>(erasedCallable);
         castCallable();
@@ -30,19 +30,18 @@ Thread::is_running() const& {
     return this->state() == ThreadState::RUNNING;
 }
 
-ThreadId
-Thread::id() const& {
-    return this->threadId_f;
+const ThreadIdentity&
+Thread::thread_identity() const& {
+    return this->identity_f;
 }
 
 void*
 Thread::pthread_runnable(void* arg) {
     Thread* thread = reinterpret_cast<Thread*>(arg);
+    thread->identity_f.id = Thread::calling_thread_id();
 
     ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
     ::pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, nullptr);
-
-    thread->threadId_f = ::gettid();
 
     thread->invoker_f(thread->callable_f, thread->callableArg_f);
 
@@ -72,11 +71,16 @@ Thread::start() & {
     char nameBuffer[16];
 
     // strncpy pads with 0 if src is shorter than expected
-    std::strncpy(nameBuffer, this->name_f.data(), 15);
+    std::strncpy(nameBuffer, this->identity_f.name.data(), 15);
     nameBuffer[15] = '\0';  // Enforce null termination
     ::pthread_setname_np(this->pthread_f, nameBuffer);
 }
 
+// TODO @basshelal Fri 20-Feb-2026 : This could possibly be a bad idea!
+//  instead we should ALWAYS design our IApplicationThreads to use a isRunning flag which will
+//  be checked every loop iteration, since most threads will use an EventFD anyway, the stop() function
+//  in the IApplicationThread can just toggle the flag and notify the eventFD instead of just force killing
+//  killing the pthread, this allows for custom cleanup too by every IApplicationThread
 void
 Thread::stop() & {
     if (this->state() != ThreadState::RUNNING) {

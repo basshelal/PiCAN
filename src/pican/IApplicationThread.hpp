@@ -12,6 +12,12 @@ protected:  // lifetime
     virtual ~IApplicationThread() = default;
 
 public:  // virtual member functions
+    virtual ThreadState
+    start() & = 0;
+
+    virtual ThreadState
+    stop() & = 0;
+
     [[nodiscard]]
     virtual const ThreadIdentity&
     thread_identity() const& = 0;
@@ -23,6 +29,10 @@ public:  // virtual member functions
     [[nodiscard]]
     virtual ThreadCounterValue
     thread_counter_value() const& = 0;
+
+    [[nodiscard]]
+    virtual const Thread&
+    backing_thread() const& = 0;
 };
 
 }  // namespace pican

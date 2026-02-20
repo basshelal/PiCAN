@@ -17,9 +17,17 @@ using ThreadName = std::string_view;
 using ThreadCounterValue = std::uint64_t;
 using ThreadCounter = CopyableAtomic<ThreadCounterValue>;
 
-struct ThreadIdentity {
-    ThreadId id;
+class ThreadIdentity {
+public:  // fields
     ThreadName name;
+    ThreadId id;
+
+public:  // constructors
+    ThreadIdentity(ThreadName name, ThreadId id) : name{name}, id{id} {
+    }
+
+    explicit ThreadIdentity(ThreadName name) : ThreadIdentity{name, 0} {
+    }
 
 public:  // lifetime
     ThreadIdentity(const ThreadIdentity& rhs) = default;
@@ -65,14 +73,13 @@ public:  // fields
     CopyableAtomic<ThreadState> state_f;
     pthread_t pthread_f;
     pthread_attr_t pthreadAttr_f;
-    ThreadId threadId_f;
-    ThreadName name_f;
+    ThreadIdentity identity_f;
 
 public:  // constructors
     template<typename CallableArg_TP>
     Thread(ThreadName name, const Callable<CallableArg_TP>& callable, CallableArg_TP* arg) :
         callable_f{reinterpret_cast<ErasedCallable>(callable)}, callableArg_f{arg}, state_f{ThreadState::CREATED},
-        pthread_f{0}, pthreadAttr_f{}, threadId_f{0}, name_f{name} {
+        pthread_f{0}, pthreadAttr_f{}, identity_f{name} {
         this->invoker_f = [](ErasedCallable erasedCallable, void* erasedArg) -> void {
             Callable<CallableArg_TP> castCallable = reinterpret_cast<Callable<CallableArg_TP>>(erasedCallable);
             CallableArg_TP* castArg = reinterpret_cast<CallableArg_TP*>(erasedArg);
@@ -105,8 +112,8 @@ public:  // getters
     is_running() const&;
 
     [[nodiscard]]
-    ThreadId
-    id() const&;
+    const ThreadIdentity&
+    thread_identity() const&;
 
 public:  // member functions
     void

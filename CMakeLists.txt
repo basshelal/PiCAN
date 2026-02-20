@@ -27,6 +27,7 @@ else ()
     message("Not using mold linker")
 endif ()
 
+add_compile_options(-fno-exceptions -fno-unwind-tables)
 add_compile_options(-Wall -Werror -pedantic -Wno-interference-size -Wno-attributes=pican::)
 
 # CPM for package/dependency management, see: https://github.com/cpm-cmake/CPM.cmake

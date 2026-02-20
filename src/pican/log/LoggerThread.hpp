@@ -28,10 +28,10 @@ private:  // fields
     EventFD eventfd_f;
     Thread thread_f;
     ThreadCounter counter_f;
-    ThreadIdentity identity_f;
+    CopyableAtomic<bool> isRunning_f;
 
 private:  // constructor
-    LoggerThread(log::Level level, ThreadName name, Array<log::Buffer> buffers,Array<log::Sink> sinks);
+    LoggerThread(log::Level level, ThreadName name, Array<log::Buffer> buffers, Array<log::Sink> sinks);
 
 public:  // lifetime
     LoggerThread(const LoggerThread& rhs) = delete;
@@ -47,23 +47,29 @@ public:  // lifetime
     ~LoggerThread() override = default;
 
 public:  // member functions
-    void
-    start() &;
+    // clang-format off
+    virtual ThreadState
+    start() & override;
 
-    void
-    stop() &;
+    virtual ThreadState
+    stop() & override;
+    // clang-format on
 
     [[nodiscard]]
-    inline virtual ThreadState
+    virtual ThreadState
     thread_state() const& override;
 
     [[nodiscard]]
-    inline virtual ThreadCounterValue
+    virtual ThreadCounterValue
     thread_counter_value() const& override;
 
     [[nodiscard]]
-    inline virtual const ThreadIdentity&
+    virtual const ThreadIdentity&
     thread_identity() const& override;
+
+    [[nodiscard]]
+    virtual const Thread&
+    backing_thread() const& override;
 
     [[nodiscard]]
     LoggerThread::Result
@@ -79,7 +85,7 @@ public:  // member functions
 public:  // static functions
     [[nodiscard]]
     static pican::Result<LoggerThread*, Error>
-    create(mem::Block block, log::Level level,ThreadName name, Count sinkCount, Count bufferEntryCount);
+    create(mem::Block block, log::Level level, ThreadName name, Count sinkCount, Count bufferEntryCount);
 
 private:  // member functions
     [[nodiscard]]

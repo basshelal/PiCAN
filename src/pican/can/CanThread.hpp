@@ -26,7 +26,9 @@ public:  // types
         ALREADY_RUNNING,
         NOT_INITIALIZED,
         FAILED_TO_CREATE_SOCKET,
-        FAILED_TO_SET_SOCKET_OPTION,
+        INTERFACE_NOT_FOUND,
+        FAILED_TO_SET_SOCKET_BUFFER_SIZE,
+        FAILED_TO_SET_SOCKET_RECEIVE_TIMEOUT,
         FAILED_TO_SET_INTERFACE_INDEX,
         FAILED_TO_BIND_SOCKET,
     };
@@ -37,14 +39,16 @@ private:  // fields
     InterfaceName interfaceName_f;
     int socketFd_f;
     Thread thread_f;
-    std::atomic_bool isRunning_f;
-    ThreadIdentity identity_f;
+    CopyableAtomic<bool> isRunning_f;
     EventBuffer uiEventBuffer_f;
     EventBuffer netEventBuffer_f;
-    ThreadCounterValue threadCounter_f;
+    ThreadCounter threadCounter_f;
 
-public:  // constructors
-    CanThread(InterfaceName interfaceName, Array<Event> uiRingBufferArray, Array<Event> netRingBufferArray);
+private:  // constructors
+    CanThread(
+        InterfaceName interfaceName, int socketFd, ThreadName threadName, Array<Event> uiRingBufferArray,
+        Array<Event> netRingBufferArray
+    );
 
 public:  // lifetime
     CanThread(const CanThread& rhs) = delete;
@@ -60,45 +64,49 @@ public:  // lifetime
     virtual ~CanThread() override = default;
 
 public:  // member functions
-    void
-    start() &;
+    // clang-format off
+    virtual ThreadState
+    start() & override;
 
-    void
-    stop() &;
+    virtual ThreadState
+    stop() & override;
+    // clang-format on
 
     [[nodiscard]]
     virtual const ThreadIdentity&
-    thread_identity() const& override {
-        return this->identity_f;
-    }
+    thread_identity() const& override;
 
     [[nodiscard]]
     virtual ThreadState
-    thread_state() const& override {
-        return this->thread_f.state();
-    }
+    thread_state() const& override;
 
     [[nodiscard]]
     virtual ThreadCounterValue
-    thread_counter_value() const& override {
-        return this->threadCounter_f;
-    }
+    thread_counter_value() const& override;
+
+    [[nodiscard]]
+    virtual const Thread&
+    backing_thread() const& override;
 
 public:  // getters
     [[nodiscard]]
     inline const EventBuffer&
-    ui_event_buffer() const& {
-        return this->uiEventBuffer_f;
-    }
+    ui_event_buffer() const&;
 
     [[nodiscard]]
     inline const EventBuffer&
-    net_event_buffer() const& {
-        return this->netEventBuffer_f;
-    }
+    net_event_buffer() const&;
 
 private:  // static functions
     static void
     runnable(CanThread* self);
+
+public:  // static functions
+    [[nodiscard]]
+    static pican::Result<CanThread*, CanThread::Error>
+    create(
+        mem::Block block, InterfaceName interfaceName, ThreadName threadName, SizeBytes linuxBufferSize,
+        std::uint8_t timeoutSeconds, Array<Event> uiRingBufferArray, Array<Event> netRingBufferArray
+    );
 };
 }  // namespace pican::can
