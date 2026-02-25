@@ -7,9 +7,9 @@
 #include <fmt/format.h>
 
 #include "pican/EventFD.hpp"
+#include "pican/File.hpp"
 #include "pican/RingBuffer.hpp"
 #include "pican/Types.hpp"
-#include "pican/File.hpp"
 #include "pican/log/Entry.hpp"
 #include "pican/log/Utils.hpp"
 
@@ -18,47 +18,52 @@ namespace pican::log {
 class LoggerThread;
 
 class Sink {
+public:  // types
+    enum class Error : std::uint8_t {
+        FILE_NOT_FOUND,
+        CANNOT_OPEN_FILE,
+    };
+
 private:  // fields
     std::string_view name_f;
     Level level_f;
     File file_f;
 
-public:  // constructor
-    Sink(const std::string_view& name, Level level, const File& file);
+private:  // constructor
+    Sink(const std::string_view& name, Level level, File&&file);
 
-public:  // copy-control
-    Sink(const Sink& rhs) = default;
+public:  // lifetime
+    Sink(const Sink& rhs) = delete;
 
     Sink(Sink&& rhs) noexcept = default;
 
     Sink&
-    operator=(const Sink& rhs) = default;
+    operator=(const Sink& rhs) & = delete;
 
     Sink&
-    operator=(Sink&& rhs) noexcept = default;
+    operator=(Sink&& rhs) & noexcept = default;
 
-    ~Sink();
+    ~Sink()=default;
 
 public:  // getters
     [[nodiscard]]
-    inline const std::string_view&
-    name() const& {
-        return this->name_f;
-    }
+    const std::string_view&
+    name() const&;
 
     [[nodiscard]]
-    inline const Level&
-    level() const& {
-        return this->level_f;
-    }
+    const Level&
+    level() const&;
 
     [[nodiscard]]
-    inline const File&
-    file() const& {
-        return this->file_f;
-    }
+    const File&
+    file() const&;
 
-public: // friends
+public:  // static functions
+    [[nodiscard]]
+    static pican::Result<Sink, Sink::Error>
+    create(std::string_view name, Level level, FilePath path);
+
+public:  // friends
     friend class LoggerThread;
 };
 

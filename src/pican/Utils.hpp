@@ -32,17 +32,6 @@ clamp(const TP& min, const TP& val, const TP& max) {
     }
 }
 
-inline void
-write_line(FILE* file, const std::string_view& message) {
-    FileDescriptor fileDescriptor = ::fileno(file);
-    if (fileDescriptor == -1) {
-        return;
-    }
-    // TODO @basshelal Tue 03-Feb-2026 : Optimize into 1 syscall somehow if possible!
-    ::write(fileDescriptor, message.data(), message.length());
-    ::write(fileDescriptor, "\n", 1);
-}
-
 [[noreturn]]
 inline void
 exit_immediately() {
@@ -53,9 +42,16 @@ exit_immediately() {
 [[noreturn]]
 inline void
 panic(const std::string_view& message) {
-    pican::write_line(stderr, message);
+    ::write(STDERR_FILENO, message.data(), message.length());
+    ::write(STDERR_FILENO, "\n", 1);
     stacktrace::print_stacktrace(stderr);
     pican::exit_immediately();
+}
+
+[[noreturn]]
+inline void
+unreachable() {
+    panic("Unreachable!");
 }
 
 [[nodiscard]]

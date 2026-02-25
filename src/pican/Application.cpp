@@ -14,8 +14,7 @@ namespace pican {
 Application* Application::instance_sf = nullptr;
 
 Application::Application() :
-    state_f{State::INITIALIZED}, stdout_f{"/dev/stdout", File::Mode::WRITE, mem::Manager::get_block(8'192)},
-    stderr_f{"/dev/stderr", File::Mode::WRITE, mem::Manager::get_block(8'192)},
+    state_f{State::INITIALIZED}, stdout_f{"/dev/stdout"}, stderr_f{"/dev/stderr"},
     threads_f{mem::Manager::get_array<IApplicationThread*>(pican::config::THREADS_COUNT)} {
 }
 
@@ -55,17 +54,17 @@ Application::initialize() {
     instance.threads_f.add_copy(instance.loggerThread_f);
 
     // initialize LoggerThread
-    instance.stdout_f.open();
-    const log::Sink stdoutSink{"stdout", log::Level::VERBOSE, instance.stdout_f};
+    pican::Result<log::Sink, log::Sink::Error> stdoutSinkResult =
+        log::Sink::create("stdout", log::Level::VERBOSE, "/dev/stdout");
     [[maybe_unused]]
-    auto res1 = instance.loggerThread_f->register_sink(stdoutSink);
+    auto res1 = instance.loggerThread_f->register_sink(std::move(stdoutSinkResult.success_value_or_panic()));
 
     pican::log_info("stdout sink added");
 
-    instance.stderr_f.open();
-    const log::Sink stderrSink{"stderr", log::Level::ERROR, instance.stderr_f};
+    pican::Result<log::Sink, log::Sink::Error> stderrSinkResult =
+        log::Sink::create("stderr", log::Level::ERROR, "/dev/stderr");
     [[maybe_unused]]
-    auto res2 = instance.loggerThread_f->register_sink(stderrSink);
+    auto res2 = instance.loggerThread_f->register_sink(std::move(stderrSinkResult.success_value_or_panic()));
 
     pican::log_info("stderr sink added");
 

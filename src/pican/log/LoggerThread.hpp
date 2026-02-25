@@ -73,7 +73,7 @@ public:  // member functions
 
     [[nodiscard]]
     LoggerThread::Result
-    register_sink(const Sink& sink) &;
+    register_sink(Sink&& sink) &;
 
     [[nodiscard]]
     LoggerThread::Result

@@ -22,6 +22,10 @@ public:  // constructors
     Block(Address address, SizeBytes sizeBytes) : address_f{address}, sizeBytes_f{sizeBytes} {
     }
 
+    template<typename TP>
+    Block(TP* ptr, SizeBytes sizeBytes) : address_f{ptr_to_address<TP>(ptr)}, sizeBytes_f{sizeBytes} {
+    }
+
 public:  // copy-control
     Block(const Block& rhs) = default;
 

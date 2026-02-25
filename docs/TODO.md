@@ -2,14 +2,13 @@
 
 ## Done
 
-* Fix up LoggerThread, possibly renaming to Logger, make logging API cleaner
-* ThreadManager, make its API also cleaner and easier
-
 ## Doing
 
-* pican::can::Thread and friends to read, filter, process and push frames to a buffer, we can
-  decide if this thread will be responsible for transforming into app usable messages instead
-  of compact proprietary frames, thus we would need a Frame parsing mechanism (hard coded for now is best)
+* info thread for reading and capturing system and process info
+* Initialization flags through command line flag parsing and environment variables
+* Filter CAN frames to what we can decode/parse and are interested in
+* Create a simple decoder/parser that is for now hardcoded but allows for the possibility of
+  using a DBC file or something like that, we will parse into can::Events
 
 * Create a MemoryManager of some kind for the tests, they will need to have usable memory
 * Allow GoogleTest to be whitelisted completely by doing a check in each heap allocation to allow for any allocations

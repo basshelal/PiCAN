@@ -6,7 +6,4 @@
 
 namespace pican::mem {
 
-TEST(initialize) {
-    Manager::initialize(100);
-}
 }  // namespace pican::memory

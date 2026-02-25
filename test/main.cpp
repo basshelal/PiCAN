@@ -12,8 +12,6 @@ initialize_memory_manager() {
     [[maybe_unused]]
     const auto memoryBytes = pican::mem::Manager::DEFAULT_SIZE;
     pican::mem::Manager::initialize(memoryBytes);
-    [[maybe_unused]]
-    pican::mem::Manager& memoryManager = pican::mem::Manager::get();
 }
 }  // namespace
 

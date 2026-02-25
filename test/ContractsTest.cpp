@@ -68,7 +68,7 @@ TEST(setup) {
     bool isEnabled = false;
     CONTRACTS_CREATE_CODE_BLOCK({ isEnabled = true; });
     ASSERT_TRUE(isEnabled);
-    pican::contracts::violationHandler_g = [](const char*, SourceLocation) -> void {
+    pican::contracts::violationHandler_g = [](const char*) -> void {
         ++contractViolated_s;
     };
 }

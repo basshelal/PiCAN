@@ -79,11 +79,11 @@ LoggerThread::backing_thread() const& {
 }
 
 LoggerThread::Result
-LoggerThread::register_sink(const Sink& sink) & {
+LoggerThread::register_sink(Sink&& sink) & {
     if (this->sinks_f.size() >= this->sinks_f.capacity()) {
         return LoggerThread::Result::failure_by_copy(LoggerThread::Error::CAPACITY_REACHED);
     }
-    this->sinks_f.add_copy(sink);
+    this->sinks_f.add_move(std::move(sink));
     return LoggerThread::Result::success_default();
 }
 
@@ -182,7 +182,7 @@ LoggerThread::runnable(LoggerThread* self) {
                         level_to_string(entry.level()), threadIdentity.name, threadIdentity.id, entry.message_buffer()
                     );
 
-                    sink.file_f.write(totalBuffer.data(), sizeof(char), formatted.size);
+                    sink.file_f.write_from(totalBuffer.data(), formatted.size);
                 }
             }
         }

@@ -15,9 +15,9 @@ TEST(create) {
     AUTO_HEAP_SEAL();
 
     Count count = 8;
-    SizeBytes size = ELEMENT_SIZE * 4;
+    SizeBytes size = ELEMENT_SIZE * count;
 
-    mem::Block block = mem::Manager::get().get_block(size);
+    mem::Block block = mem::Manager::get_block(size);
 
     Array<Element> array{block};
 
@@ -33,14 +33,14 @@ TEST(set_and_get) {
     Count count = 8;
     SizeBytes size = ELEMENT_SIZE * count;
 
-    mem::Block block = mem::Manager::get().get_block(size);
+    mem::Block block = mem::Manager::get_block(size);
 
     Array<Element> array{block};
 
     Element element0{"element0"};
-    array.set_at(0, element0);
+    array.set(0, element0);
 
-    const Element& gotElement0 = array.get_at(0);
+    const Element& gotElement0 = array.get(0);
     ASSERT_EQUAL(element0.data, gotElement0.data);
     ASSERT_EQUAL(element0.moveCount, 0);
     ASSERT_EQUAL(element0.copyCount, 0);

@@ -33,8 +33,6 @@ public:  // types
         FAILED_TO_BIND_SOCKET,
     };
 
-    using Result = pican::SimpleResult<Error>;
-
 private:  // fields
     InterfaceName interfaceName_f;
     int socketFd_f;
@@ -45,6 +43,12 @@ private:  // fields
     ThreadCounter threadCounter_f;
 
 private:  // constructors
+    // TODO @basshelal Sun 22-Feb-2026 : Instead of the ringbuffers being passed in here, use a callback based system
+    //  so that each "consumer" receives when a new Event is found and can add it into that consumer's OWN ringbuffer
+    //  possibly processesing and filtering it too, this makes code more localized but means consumers get a slice of
+    //  the CanThread's time and thus need to obey the rules, also we need to make it clear that the callback
+    //  is being run from the CanThread, callbacks need to be registered before the CanThread is started to make things
+    //  easy and thread-safe
     CanThread(
         InterfaceName interfaceName, int socketFd, ThreadName threadName, Array<Event> uiRingBufferArray,
         Array<Event> netRingBufferArray
