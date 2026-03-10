@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "pican/CopyableAtomic.hpp"
+#include "pican/File.hpp"
 #include "pican/IApplicationThread.hpp"
 #include "pican/Result.hpp"
 #include "pican/info/Info.hpp"
@@ -19,7 +20,12 @@ private:  // fields
     ThreadCounter threadCounter_f;
     Milliseconds sleepMillis_f;
 
+    pican::File memInfoFile_f;
+    pican::File selfStatusFile_f;
+
 private:  // constructors
+    InfoThread(Milliseconds sleepMillis);
+
 public:   // lifetime
     InfoThread(const InfoThread& rhs) = delete;
 
@@ -58,7 +64,8 @@ public:  // member functions
     virtual const Thread&
     backing_thread() const& override;
 
-public:  // static functions
+private:  // member functions
+public:   // static functions
     [[nodiscard]]
     static pican::Result<InfoThread*, Error>
     create();

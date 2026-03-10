@@ -14,7 +14,6 @@ constexpr FileDescriptor NULL_FILE_DESCRIPTOR = -1;
 enum class FileMode : std::uint8_t {
     READ_ONLY,
     WRITE_ONLY,
-    READ_WRITE,
 };
 
 // TODO @basshelal Tue 24-Feb-2026 : How will we deal with directories????
@@ -43,6 +42,7 @@ public:  // types
         CANNOT_STAT,
         NO_BUFFER,
         NOT_SEEKABLE,
+        END_OF_FILE
     };
 
     using SimpleResult = pican::SimpleResult<Error>;
@@ -52,12 +52,10 @@ private:  // fields
     FileDescriptor descriptor_f;
     FileMode mode_f;
     bool isOpen_f;
-    FileType type_f;
-    mutable Offset lastCommitedOffset_f;
-    std::optional<FileBuffer> readBuffer_f;
-    std::optional<FileBuffer> writBuffer_f;
-    Offset readBufferOffset_f;   // needed?
-    Offset writeBufferOffset_f;  // needed?
+    mutable std::optional<FileBuffer> readBuffer_f;
+    mutable Offset lastReadOffset_f;
+    mutable std::optional<FileBuffer> writBuffer_f;
+    mutable Offset lastWriteOffset_f;
 
 public:  // constructor
     explicit File(FilePath path);
@@ -97,14 +95,10 @@ public:  // member functions
     has_write_buffer() const&;
 
     SimpleResult
-    open(FileMode mode = FileMode::READ_WRITE, bool create = true, bool append = true) &;
+    open(FileMode mode, bool create) &;
 
     SimpleResult
     close() &;
-
-    [[nodiscard]]
-    Offset
-    current_offset() const&;
 
     Result<Offset, Error>
     seek_to(Offset offset) &;
@@ -171,24 +165,53 @@ public:  // member functions
     SimpleResult
     sync() &;
 
-    [[nodiscard]]
-    bool
-    has_unflushed_data() &;
-
     SimpleResult
     flush() &;
 
     SimpleResult
+    reread() const&;
+
+    SimpleResult
     clear() &;
+
+    [[nodiscard]]
+    bool
+    can_flush() const&;
 
 private:  // member functions
     Result<SizeBytes, File::Error>
-    actual_write(void* source, SizeBytes size) &;
+    actual_write_from(void* source, SizeBytes size) &;
+
+    Result<SizeBytes, File::Error>
+    actual_read_into(void* destination, SizeBytes size) const&;
+
+    Result<Offset, File::Error>
+    actual_seek(Offset offset) const&;
+
+    [[nodiscard]]
+    Offset
+    latest_read_offset() const&;
+
+    [[nodiscard]]
+    Offset
+    latest_write_offset() const&;
 
 public:  // static functions
     [[nodiscard]]
     static bool
     exists(FilePath path);
+
+    [[nodiscard]]
+    static bool
+    is_readable(FilePath path);
+
+    [[nodiscard]]
+    static bool
+    is_writable(FilePath path);
+
+    [[nodiscard]]
+    static bool
+    is_seekable(FilePath path);
 
     static SimpleResult
     remove(FilePath path);

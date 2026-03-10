@@ -93,6 +93,10 @@ Application::initialize() {
     instance.canThread_f = canThreadPtr;
 
     instance.threads_f.add_copy(instance.canThread_f);
+
+
+    // create info thread
+
 }
 
 /* static */

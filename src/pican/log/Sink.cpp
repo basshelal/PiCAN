@@ -27,7 +27,7 @@ Sink::create(std::string_view name, Level level, FilePath path) {
         return pican::Result<Sink, Sink::Error>::failure_by_copy(Sink::Error::FILE_NOT_FOUND);
     }
     File file{path};
-    const File::SimpleResult openResult = file.open(FileMode::WRITE_ONLY, true, true);
+    const File::SimpleResult openResult = file.open(FileMode::WRITE_ONLY, true);
     if (openResult.is_failure()) {
         return pican::Result<Sink, Sink::Error>::failure_by_copy(Sink::Error::CANNOT_OPEN_FILE);
     }

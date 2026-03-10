@@ -22,7 +22,7 @@ environment_initialize(int argc, char** argv) {
     stacktrace::initialize(argv);
     ::signal(SIGSEGV, cleanup_by_signal);
     ::signal(SIGILL, cleanup_by_signal);
-    ::signal(SIGABRT,cleanup_by_signal);
+    ::signal(SIGABRT, cleanup_by_signal);
     ::signal(SIGBUS, cleanup_by_signal);
 
     ::signal(SIGTERM, cleanup_by_signal);

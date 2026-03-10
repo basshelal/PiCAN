@@ -12,8 +12,6 @@ TEST(example) {
 
     MemoryReader memoryReader{std::move(memoryReaderResult.success_value_or_panic())};
 
-    auto free = memoryReader.get_free_system_memory();
-
-    ::fprintf(stderr, "free: %zu\n", free);
+    auto free = memoryReader.update_info();
 }
 }  // namespace pican::info

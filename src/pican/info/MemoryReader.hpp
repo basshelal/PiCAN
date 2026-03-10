@@ -15,17 +15,28 @@
 namespace pican::info {
 
 class MemoryReader {
+private:  // types
+    struct Info {
+        SizeBytes totalMemory;
+        SizeBytes availableMemory;
+        SizeBytes processUsedMemory;
+    };
+
 public:  // types
     enum class Error : std::uint8_t {
+        FAILED_TO_SET_BUFFER,
         FAILED_TO_OPEN_FILE,
+        FILE_READ_ERROR,
     };
 
 private:  // fields
-    mutable pican::File memInfoFile_f;
-    mutable pican::File selfStatusFile_f;
+    pican::File memInfoFile_f;
+    pican::File selfStatusFile_f;
+    mem::Block lineBuffer_f;
+    Info info_f;
 
 private:  // constructors
-    MemoryReader(pican::File&& memInfoFile, pican::File&& selfStatusFile);
+    MemoryReader(pican::File&& memInfoFile, pican::File&& selfStatusFile, const mem::Block& lineBuffer);
 
 public:  // lifetime
     MemoryReader(const MemoryReader& rhs) = delete;
@@ -41,6 +52,9 @@ public:  // lifetime
     ~MemoryReader() = default;
 
 public:  // member functions
+    SimpleResult<Error>
+    update_info() &;
+
     [[nodiscard]]
     SizeBytes
     get_total_system_memory() const&;
@@ -58,7 +72,10 @@ public:  // member functions
     get_process_used_memory() const&;
 
 private:  // member functions
-public:   // static functions
+    SimpleResult<Error>
+    read_meminfo_file() &;
+
+public:  // static functions
     [[nodiscard]]
     static pican::Result<MemoryReader, MemoryReader::Error>
     create();

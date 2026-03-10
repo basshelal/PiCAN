@@ -7,19 +7,14 @@
 
 namespace pican {
 class FileBuffer {
-public:  // types
-    enum class Type : std::uint8_t {
-        READ,
-        WRITE,
-    };
-
+public:   // types
 private:  // fields
     mem::Block block_f;
-    mutable Offset offset_f;
-    FileBuffer::Type type_f;
+    mutable Index writeIndex_f;
+    mutable Index readIndex_f;
 
 public:  // constructors
-    explicit FileBuffer(const mem::Block& block, FileBuffer::Type type);
+    explicit FileBuffer(const mem::Block& block);
 
 public:  // lifetime
     FileBuffer(const FileBuffer& rhs) = delete;
@@ -41,32 +36,38 @@ public:  // member functions
     SizeBytes
     read_into(void* destination, SizeBytes size) const&;
 
-    Offset
-    set_offset(Offset offset) &;
+    void
+    clear() &;
 
     [[nodiscard]]
     const mem::Block&
     block() const&;
 
     [[nodiscard]]
-    Offset
-    offset() const&;
+    Index
+    read_index() const&;
 
     [[nodiscard]]
-    FileBuffer::Type
-    type() const&;
+    Index
+    write_index() const&;
 
     [[nodiscard]]
     SizeBytes
-    remaining_bytes() const&;
+    readable_bytes() const&;
+
+    [[nodiscard]]
+    SizeBytes
+    writable_bytes() const&;
 
     [[nodiscard]]
     SizeBytes
     capacity_bytes() const&;
 
-    [[nodiscard]]
-    bool
-    is_full() const&;
+    Index
+    increment_write_index_by(Index incrementBy) &;
+
+    Index
+    increment_read_index_by(Index incrementBy) &;
 
 public:  // friends
     friend class File;

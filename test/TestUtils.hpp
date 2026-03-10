@@ -13,4 +13,8 @@
 
 #define FAIL_TEST(Message) GTEST_FAIL() << (Message)
 
+#define SKIP_TEST(Message) GTEST_SKIP() << (Message)
+
+#define TEST_NOT_IMPLEMENTED() FAIL_TEST("Test not implemented!")
+
 #define TEST(testName) GTEST_TEST(TEST_SUITE_NAME, testName)
