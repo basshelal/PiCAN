@@ -86,7 +86,7 @@ public:  // member functions
 
     [[nodiscard]]
     virtual ThreadCounterValue
-    thread_counter_value() const& override;
+    counter_value() const& override;
 
     [[nodiscard]]
     virtual const Thread&

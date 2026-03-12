@@ -3,20 +3,26 @@
 #include <array>
 #include <cstdint>
 
+#include "pican/ApplicationState.hpp"
+#include "pican/ArrayList.hpp"
 #include "pican/Config.hpp"
+#include "pican/File.hpp"
 #include "pican/IApplicationThread.hpp"
 #include "pican/Result.hpp"
 #include "pican/Thread.hpp"
-#include "pican/can/CanThread.hpp"
-#include "pican/log/LoggerThread.hpp"
 
 namespace pican {
+namespace can {
+class CanThread;
+}
 
-enum class Threads : std::uint8_t {
-    MAIN,
-    LOGGER,
-    CAN,
-};
+namespace info {
+class InfoThread;
+}
+
+namespace log {
+class LoggerThread;
+}
 
 class Application {
 public:  // types
@@ -45,6 +51,7 @@ private:  // fields
     ArrayList<IApplicationThread*> threads_f;
     log::LoggerThread* loggerThread_f;
     can::CanThread* canThread_f;
+    info::InfoThread* infoThread_f;
 
 private:  // constructor
     Application();

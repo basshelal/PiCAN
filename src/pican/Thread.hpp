@@ -52,7 +52,8 @@ public:  // operators
 enum class ThreadState : std::uint8_t {
     CREATED,
     RUNNING,
-    STOPPED,
+    FINISHED,
+    KILLED,
 };
 
 class Thread {
@@ -66,7 +67,7 @@ private:  // types
     using ErasedCallable = void (*)(void* arg);
     using Invoker = void (*)(ErasedCallable callable, void* arg);
 
-public:  // fields
+private:  // fields
     Invoker invoker_f;
     ErasedCallable callable_f;
     void* callableArg_f;
@@ -113,18 +114,18 @@ public:  // getters
 
     [[nodiscard]]
     const ThreadIdentity&
-    thread_identity() const&;
+    identity() const&;
 
 public:  // member functions
     void
     start() &;
 
     void
-    stop() &;
+    kill() &;
 
 private:  // member functions
     static void*
-    pthread_runnable(void* arg);
+    runnable(void* arg);
 
 public:  // static functions
     [[nodiscard]]

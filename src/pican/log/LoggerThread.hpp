@@ -56,16 +56,8 @@ public:  // member functions
     // clang-format on
 
     [[nodiscard]]
-    virtual ThreadState
-    thread_state() const& override;
-
-    [[nodiscard]]
     virtual ThreadCounterValue
-    thread_counter_value() const& override;
-
-    [[nodiscard]]
-    virtual const ThreadIdentity&
-    thread_identity() const& override;
+    counter_value() const& override;
 
     [[nodiscard]]
     virtual const Thread&

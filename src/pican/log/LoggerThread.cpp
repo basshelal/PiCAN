@@ -16,61 +16,29 @@ LoggerThread::LoggerThread(log::Level level, ThreadName name, Array<log::Buffer>
     thread_f{name, &LoggerThread::runnable, this}, counter_f{0}, isRunning_f{false} {
 }
 
-/* static */
-pican::Result<LoggerThread*, LoggerThread::Error>
-LoggerThread::create(mem::Block block, log::Level level, ThreadName name, Count sinkCount, Count bufferEntryCount) {
-    CONTRACTS_PRECONDITION(block.size_bytes() >= sizeof(LoggerThread));
-
-    Array<Buffer> buffers = mem::Manager::get_array<Buffer>(config::THREADS_COUNT);
-    // initialize buffers
-    for (Index i = 0; i < buffers.length(); ++i) {
-        Array<Entry> entries = mem::Manager::get_array<Entry>(bufferEntryCount);
-        Buffer* buffer = buffers.get_ptr(i);
-        buffer = new (buffer) Buffer{entries};
-    }
-    Array<Sink> sinks = mem::Manager::get_array<Sink>(sinkCount);
-
-    LoggerThread* thread = new (block.address_to_ptr<LoggerThread>()) LoggerThread{level, name, buffers, sinks};
-
-    CONTRACTS_ASSERT(thread != nullptr);
-
-    return pican::Result<LoggerThread*, LoggerThread::Error>::success_by_copy(thread);
-}
-
 ThreadState
 LoggerThread::start() & {
-    if (this->thread_f.state() == ThreadState::RUNNING) {
+    if (this->thread_state() == ThreadState::RUNNING) {
         return this->thread_state();
     }
-    this->isRunning_f.store(true);
+    this->isRunning_f.store(true, std::memory_order_release);
     this->thread_f.start();
     return this->thread_state();
 }
 
 ThreadState
 LoggerThread::stop() & {
-    if (this->thread_f.state() == ThreadState::STOPPED) {
+    if (this->thread_f.state() != ThreadState::RUNNING) {
         return this->thread_state();
     }
-    this->isRunning_f.store(true);
+    this->isRunning_f.store(true, std::memory_order_release);
     this->eventfd_f.notify();
-    this->thread_f.stop();
     return this->thread_state();
 }
 
-ThreadState
-LoggerThread::thread_state() const& {
-    return this->thread_f.state();
-}
-
 ThreadCounterValue
-LoggerThread::thread_counter_value() const& {
-    return this->counter_f.load(std::memory_order_relaxed);
-}
-
-const ThreadIdentity&
-LoggerThread::thread_identity() const& {
-    return this->thread_f.identity_f;
+LoggerThread::counter_value() const& {
+    return this->counter_f.load(std::memory_order_acquire);
 }
 
 const Thread&
@@ -121,6 +89,27 @@ LoggerThread::log_entry(const Entry& entry) & {
     this->eventfd_f.notify();
 }
 
+/* static */
+pican::Result<LoggerThread*, LoggerThread::Error>
+LoggerThread::create(mem::Block block, log::Level level, ThreadName name, Count sinkCount, Count bufferEntryCount) {
+    CONTRACTS_PRECONDITION(block.size_bytes() >= sizeof(LoggerThread));
+
+    Array<Buffer> buffers = mem::Manager::get_array<Buffer>(config::THREADS_COUNT);
+    // initialize buffers
+    for (Index i = 0; i < buffers.length(); ++i) {
+        Array<Entry> entries = mem::Manager::get_array<Entry>(bufferEntryCount);
+        Buffer* buffer = buffers.get_ptr(i);
+        buffer = new (buffer) Buffer{entries};
+    }
+    Array<Sink> sinks = mem::Manager::get_array<Sink>(sinkCount);
+
+    LoggerThread* thread = new (block.address_to_ptr<LoggerThread>()) LoggerThread{level, name, buffers, sinks};
+
+    CONTRACTS_ASSERT(thread != nullptr);
+
+    return pican::Result<LoggerThread*, LoggerThread::Error>::success_by_copy(thread);
+}
+
 Buffer*
 LoggerThread::get_buffer_of_thread(const ThreadId& id) const& {
     for (Buffer& buffer : this->buffers_f) {
@@ -144,10 +133,10 @@ LoggerThread::runnable(LoggerThread* self) {
         dateTimeBufferSize + 1 + levelBufferSize + 1 + threadBufferSize + 1 + MESSAGE_MAX_SIZE;
     std::array<char, totalBufferSize> totalBuffer;
 
-    while (self->isRunning_f.load()) {
-        self->counter_f.atomic().fetch_add(1, std::memory_order_relaxed);
+    while (self->isRunning_f.load(std::memory_order_acquire)) {
+        self->counter_f.atomic().fetch_add(1, std::memory_order_acq_rel);
         self->eventfd_f.wait_blocking();
-        if (!self->isRunning_f.load()) {
+        if (!self->isRunning_f.load(std::memory_order_acquire)) {
             break;
         }
 

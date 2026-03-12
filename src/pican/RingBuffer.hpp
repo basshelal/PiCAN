@@ -9,6 +9,7 @@
 
 #include "pican/Array.hpp"
 #include "pican/Contracts.hpp"
+#include "pican/CopyableAtomic.hpp"
 #include "pican/Result.hpp"
 #include "pican/Types.hpp"
 #include "pican/Utils.hpp"
@@ -50,11 +51,9 @@ private:  // member fields
     // to be on different cache lines to avoid this issue
     // this matters for performance of hotspots and hot loops
 
-    alignas(pican::mem::CACHE_LINE_ALIGNMENT) std::atomic<Index> writeIndex_f;
+    alignas(pican::mem::CACHE_LINE_ALIGNMENT) pican::CopyableAtomic<Index> writeIndex_f;
 
-    alignas(pican::mem::CACHE_LINE_ALIGNMENT) std::atomic<Index> readIndex_f;
-
-    alignas(pican::mem::CACHE_LINE_ALIGNMENT) std::atomic<Count> itemsWritten_f;
+    alignas(pican::mem::CACHE_LINE_ALIGNMENT) pican::CopyableAtomic<Index> readIndex_f;
 
 public:  // constructors
     RingBuffer(
@@ -64,7 +63,7 @@ public:  // constructors
         array_f{array}, itemsCount_f{array.length() - 1}, overflowBehavior_f{overflowBehavior},
         overflowCallback_f{overflowCallback}, underflowCallback_f{underflowCallback},
         overwriteCallback_f{overwriteCallback}, failedReadCallback_f{failedReadCallback}, writeIndex_f{0},
-        readIndex_f{0}, itemsWritten_f{0} {
+        readIndex_f{0} {
     }
 
     RingBuffer(const pican::Array<TP>& array, RingBufferOverflowBehavior overflowBehavior) :
@@ -75,13 +74,13 @@ public:  // constructors
 public:  // copy-control
     RingBuffer(const RingBuffer& rhs) = delete;
 
-    RingBuffer(RingBuffer&& rhs) noexcept = delete;
+    RingBuffer(RingBuffer&& rhs) noexcept = default;
 
     RingBuffer&
     operator=(const RingBuffer& rhs) & = delete;
 
     RingBuffer&
-    operator=(RingBuffer&& rhs) & noexcept = delete;
+    operator=(RingBuffer&& rhs) & noexcept = default;
 
     ~RingBuffer() = default;
 
@@ -95,8 +94,8 @@ public:  // getters
     [[nodiscard]]
     Count
     size() const& {
-        const Index writeIndex = this->writeIndex_f.load(std::memory_order_relaxed);
-        const Index readIndex = this->readIndex_f.load(std::memory_order_relaxed);
+        const Index writeIndex = this->writeIndex_f.load(std::memory_order_acquire);
+        const Index readIndex = this->readIndex_f.load(std::memory_order_acquire);
 
         if (readIndex == writeIndex) {  // empty
             return 0;
@@ -115,8 +114,8 @@ public:  // getters
     [[nodiscard]]
     bool
     is_empty() const& {
-        const Index writeIndex = this->writeIndex_f.load(std::memory_order_relaxed);
-        const Index readIndex = this->readIndex_f.load(std::memory_order_relaxed);
+        const Index writeIndex = this->writeIndex_f.load(std::memory_order_acquire);
+        const Index readIndex = this->readIndex_f.load(std::memory_order_acquire);
 
         return readIndex == writeIndex;
     }
@@ -124,8 +123,8 @@ public:  // getters
     [[nodiscard]]
     bool
     is_full() const& {
-        const Index writeIndex = this->writeIndex_f.load(std::memory_order_relaxed);
-        const Index readIndex = this->readIndex_f.load(std::memory_order_relaxed);
+        const Index writeIndex = this->writeIndex_f.load(std::memory_order_acquire);
+        const Index readIndex = this->readIndex_f.load(std::memory_order_acquire);
 
         return this->increment_index(writeIndex) == readIndex;
     }
@@ -137,13 +136,9 @@ public:  // getters
     }
 
 public:  // member functions
-    // TODO fix memory orders by researching them exactly
-
     void
     push_copy(const TP& val) & {
-        const Index writeIndex = this->writeIndex_f.load(std::memory_order_relaxed);
-        [[maybe_unused]]
-        const Index readIndex = this->readIndex_f.load(std::memory_order_relaxed);
+        const Index writeIndex = this->writeIndex_f.load(std::memory_order_acquire);
 
         if (this->is_full()) {
             if (this->overflowBehavior_f == RingBufferOverflowBehavior::DISCARD_NEWEST) {
@@ -160,17 +155,17 @@ public:  // member functions
 
         // increment it correctly
         if (writeIndex == this->capacity()) {
-            this->writeIndex_f.store(0, std::memory_order_relaxed);
+            this->writeIndex_f.store(0, std::memory_order_release);
         } else {
-            this->writeIndex_f.store(writeIndex + 1, std::memory_order_relaxed);
+            this->writeIndex_f.store(writeIndex + 1, std::memory_order_release);
         }
     }
 
     [[nodiscard]]
     TP*
     pop_ptr() & {
-        const Index writeIndex = this->writeIndex_f.load(std::memory_order_relaxed);
-        const Index readIndex = this->readIndex_f.load(std::memory_order_relaxed);
+        Index writeIndex = this->writeIndex_f.load(std::memory_order_acquire);
+        const Index readIndex = this->readIndex_f.load(std::memory_order_acquire);
 
         if (readIndex == writeIndex) {  // empty!
             this->underflowCallback_f(*this);
@@ -182,17 +177,18 @@ public:  // member functions
         do {
             popped = this->array_f.get_ptr(readIndex);
 
-            const Index latestWriteIndex = this->writeIndex_f.load(std::memory_order_relaxed);
+            const Index latestWriteIndex = this->writeIndex_f.load(std::memory_order_acquire);
             writeHappened = latestWriteIndex != writeIndex;
             if (writeHappened) {
                 this->failedReadCallback_f(*this);
+                writeIndex = latestWriteIndex;
             }
         } while (writeHappened);
 
         if (readIndex == this->capacity()) {
-            this->readIndex_f.store(0, std::memory_order_relaxed);
+            this->readIndex_f.store(0, std::memory_order_release);
         } else {
-            this->readIndex_f.store(readIndex + 1, std::memory_order_relaxed);
+            this->readIndex_f.store(readIndex + 1, std::memory_order_release);
         }
 
         return popped;
@@ -222,15 +218,15 @@ public:  // member functions
 
     void
     clear() & {
-        this->writeIndex_f.store(0, std::memory_order_relaxed);
-        this->readIndex_f.store(0, std::memory_order_relaxed);
+        this->writeIndex_f.store(0, std::memory_order_release);
+        this->readIndex_f.store(0, std::memory_order_release);
     }
 
 private:  // member functions
     void
     increment_index_in_place(std::atomic<Index>& index) & {
-        if (index.load(std::memory_order_relaxed) == this->capacity()) {
-            index.store(0, std::memory_order_relaxed);
+        if (index.load(std::memory_order_acquire) == this->capacity()) {
+            index.store(0, std::memory_order_release);
             return;
         }
         index.fetch_add(1);

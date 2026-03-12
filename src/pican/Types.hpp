@@ -15,6 +15,7 @@ using Index = std::size_t;
 
 using FileDescriptor = int;
 using Milliseconds = std::uint64_t;
+using NanoSeconds = std::uint64_t;
 
 using FilePath = std::string_view;
 

@@ -32,11 +32,11 @@ public:  // types
 private:  // fields
     pican::File memInfoFile_f;
     pican::File selfStatusFile_f;
-    mem::Block lineBuffer_f;
+    mem::Block fileBuffer_f;
     Info info_f;
 
 private:  // constructors
-    MemoryReader(pican::File&& memInfoFile, pican::File&& selfStatusFile, const mem::Block& lineBuffer);
+    MemoryReader(pican::File&& memInfoFile, pican::File&& selfStatusFile, const mem::Block& fileBuffer);
 
 public:  // lifetime
     MemoryReader(const MemoryReader& rhs) = delete;
@@ -74,6 +74,9 @@ public:  // member functions
 private:  // member functions
     SimpleResult<Error>
     read_meminfo_file() &;
+
+    SimpleResult<Error>
+    read_self_status_file() &;
 
 public:  // static functions
     [[nodiscard]]

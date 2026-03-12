@@ -6,6 +6,8 @@
 #include "pican/File.hpp"
 #include "pican/Log.hpp"
 #include "pican/can/CanThread.hpp"
+#include "pican/info/InfoThread.hpp"
+#include "pican/log/LoggerThread.hpp"
 #include "pican/mem/Manager.hpp"
 
 using TimeSpec = struct ::timespec;
@@ -72,6 +74,9 @@ Application::initialize() {
     [[maybe_unused]]
     auto res3 = instance.loggerThread_f->register_thread(mainThreadIdentity);
 
+    mem::Block applicationStateBlock = mem::Manager::get_block_for<ApplicationState>();
+    ApplicationState::initialize(applicationStateBlock);
+
     // create CanThread
     mem::Block canThreadBlock = mem::Manager::get_block_for<can::CanThread>();
 
@@ -94,9 +99,24 @@ Application::initialize() {
 
     instance.threads_f.add_copy(instance.canThread_f);
 
-
     // create info thread
+    mem::Block infoThreadBlock = mem::Manager::get_block_for<info::InfoThread>();
 
+    mem::Block fileBuffer = mem::Manager::get_block(8'192);
+
+    pican::Result<info::InfoThread*, info::InfoThread::Error> infoThreadResult =
+        info::InfoThread::create(infoThreadBlock, fileBuffer, 500);
+
+    if (infoThreadResult.is_failure()) {
+        [[maybe_unused]]
+        info::InfoThread::Error error = infoThreadResult.failure_value_or_panic();
+        pican::panic("Failed!");
+    }
+    info::InfoThread* infoThreadPtr = infoThreadResult.success_value_or_panic();
+    CONTRACTS_ASSERT(infoThreadPtr == infoThreadBlock.address_to_ptr<info::InfoThread>());
+    instance.infoThread_f = infoThreadPtr;
+
+    instance.threads_f.add_copy(instance.infoThread_f);
 }
 
 /* static */
@@ -109,6 +129,7 @@ Application::start() {
 
     instance.loggerThread_f->start();
     instance.canThread_f->start();
+    instance.infoThread_f->start();
 
     instance.state_f = State::RUNNING;
 
@@ -116,6 +137,8 @@ Application::start() {
     auto res0 = instance.loggerThread_f->register_thread(instance.loggerThread_f->thread_identity());
     [[maybe_unused]]
     auto res1 = instance.loggerThread_f->register_thread(instance.canThread_f->thread_identity());
+    [[maybe_unused]]
+    auto res2 = instance.loggerThread_f->register_thread(instance.infoThread_f->thread_identity());
 }
 
 /* static */
@@ -124,6 +147,7 @@ Application::stop() {
     Application& instance = This::get_instance();
     instance.loggerThread_f->stop();
     instance.canThread_f->stop();
+    instance.infoThread_f->stop();
 
     instance.state_f = State::STOPPED;
 }
@@ -141,8 +165,9 @@ Application::loop() {
         pican::log_info("Looping!");
         for (Count i = 0; i < instance.threads_f.size(); ++i) {
             const IApplicationThread* thread = instance.threads_f[i];
+            pican::log_info("Thread: {}", thread->thread_identity().name);
             const ThreadCounterValue oldValue = counters[i];
-            const ThreadCounterValue newValue = thread->thread_counter_value();
+            const ThreadCounterValue newValue = thread->counter_value();
             if (oldValue == newValue) {
                 pican::log_warn(
                     "Counter values unchanged for thread: {}, values: {}", thread->thread_identity().name, oldValue

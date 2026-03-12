@@ -20,15 +20,19 @@ public:  // virtual member functions
 
     [[nodiscard]]
     virtual const ThreadIdentity&
-    thread_identity() const& = 0;
+    thread_identity() const& {
+        return this->backing_thread().identity();
+    }
 
     [[nodiscard]]
     virtual ThreadState
-    thread_state() const& = 0;
+    thread_state() const& {
+        return this->backing_thread().state();
+    };
 
     [[nodiscard]]
     virtual ThreadCounterValue
-    thread_counter_value() const& = 0;
+    counter_value() const& = 0;
 
     [[nodiscard]]
     virtual const Thread&

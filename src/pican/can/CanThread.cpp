@@ -10,7 +10,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "pican/ApplicationState.hpp"
 #include "pican/Contracts.hpp"
+#include "pican/Timer.hpp"
 #include "pican/Log.hpp"
 #include "pican/Result.hpp"
 #include "pican/log/Buffer.hpp"
@@ -26,6 +28,139 @@ CanThread::CanThread(
     interfaceName_f{interfaceName}, socketFd_f{socketFd}, thread_f{threadName, &This::runnable, this},
     isRunning_f{false}, uiEventBuffer_f{uiRingBufferArray, RingBufferOverflowBehavior::OVERWRITE_OLDEST},
     netEventBuffer_f{netRingBufferArray, RingBufferOverflowBehavior::OVERWRITE_OLDEST}, threadCounter_f{0} {
+}
+
+ThreadState
+CanThread::start() & {
+    if (this->thread_f.is_running()) {
+        return this->thread_state();
+    }
+    this->isRunning_f.store(true, std::memory_order_release);
+    this->thread_f.start();
+    return this->thread_state();
+}
+
+// TODO @basshelal Tue 10-Mar-2026 : Use eventfd for notifying a stop? How can we merge multiple fds since we already
+//  have the socketdfd being read
+ThreadState
+CanThread::stop() & {
+    if (!this->thread_f.is_running()) {
+        return this->thread_state();
+    }
+    this->isRunning_f.store(false, std::memory_order_release);
+    return this->thread_state();
+}
+
+const ThreadIdentity&
+CanThread::thread_identity() const& {
+    return this->thread_f.identity();
+}
+
+ThreadState
+CanThread::thread_state() const& {
+    return this->thread_f.state();
+}
+
+ThreadCounterValue
+CanThread::counter_value() const& {
+    return this->threadCounter_f.load();
+}
+
+const Thread&
+CanThread::backing_thread() const& {
+    return this->thread_f;
+}
+
+const EventBuffer&
+CanThread::ui_event_buffer() const& {
+    return this->uiEventBuffer_f;
+}
+
+const EventBuffer&
+CanThread::net_event_buffer() const& {
+    return this->netEventBuffer_f;
+}
+
+namespace {
+void
+log_linux_can_frame(const LinuxCanFrame& frame) {
+    // Below can become extremely stressful on the log thread, be careful
+    // pican::log_verbose(
+    //     "{:03X} [{}] {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X}", frame.can_id, frame.can_dlc,
+    //     frame.data[0], frame.data[1], frame.data[2], frame.data[3], frame.data[4], frame.data[5], frame.data[6],
+    //     frame.data[7]
+    // );
+}
+}  // namespace
+
+/* static */
+void
+CanThread::runnable(CanThread* self) {
+    LinuxCanFrame linuxFrame{};
+    pican::can::Event event{};
+    pican::can::CanInfo canInfo{};
+    pican::Timer<TimerUnit::NANOSECONDS> timer{};
+    const ssize_t expectedReadBytes = static_cast<ssize_t>(sizeof(LinuxCanFrame));
+
+    while (self->isRunning_f.load(std::memory_order_acquire)) {
+        self->threadCounter_f.atomic().fetch_add(1, std::memory_order_acq_rel);
+        // block read until a frame is found or a timeout happens
+
+        timer.start();
+        const ssize_t readBytes = ::read(self->socketFd_f, &linuxFrame, sizeof(struct can_frame));
+        decltype(timer)::DurationUnit frameReadWaitTime = timer.stop();
+
+        // pican::log_info("nanos: {}", nanos);
+        // pican::log_info("fps: {}", fps);
+
+        if (!self->isRunning_f.load(std::memory_order_acquire)) {
+            break;
+        }
+
+        // bad case, no frame read
+        if (readBytes < 0) {
+            const int err = errno;
+            switch (err) {
+                case EAGAIN: {
+                    pican::log_warn("read() timed out");
+                    break;
+                }
+                case EBADF: {
+                    pican::log_warn("socket was closed");
+                    break;
+                }
+                default: {
+                    pican::log_warn("unknown error: {} {}", ::strerrorname_np(err), ::strerror(errno));
+                    break;
+                }
+            }
+            continue;
+        }
+
+        // unexpected read bytes size, probably incomplete frame
+        if (readBytes < expectedReadBytes) {
+            pican::log_warn("Incomplete CAN frame read");
+            continue;
+        }
+        // happy path
+        CONTRACTS_ASSERT(readBytes == expectedReadBytes);
+
+        timer.start(); // processing time
+
+        log_linux_can_frame(linuxFrame);
+
+        event.set_from_linux_can_frame(linuxFrame);
+
+        self->uiEventBuffer_f.push_copy(event);
+        self->netEventBuffer_f.push_copy(event);
+        decltype(timer)::DurationUnit processingTime = timer.stop();
+
+        canInfo.lastFrameWaitTime = frameReadWaitTime;
+        canInfo.lastFrameProcessingTime = processingTime;
+        canInfo.lastFrameSize = linuxFrame.len;
+
+        ApplicationState::get().canInfo_f.write(canInfo);
+    }
 }
 
 /* static */
@@ -74,7 +209,7 @@ CanThread::create(
 
     // Set Receive Timeout
     // If we don't do this, read() will block forever.
-    // If no frame arrives, read() returns -1 with errno=EAGAIN.
+    // If no frame arrives, read() returns -1 with errno = EAGAIN.
     // This gives our thread a chance to check running flag and exit
     struct timeval timeVal{};
     timeVal.tv_sec = timeoutSeconds;
@@ -91,122 +226,6 @@ CanThread::create(
     CONTRACTS_ASSERT(canThread != nullptr);
 
     return Ret::success_by_move(std::move(canThread));
-}
-
-ThreadState
-CanThread::start() & {
-    if (this->thread_f.is_running()) {
-        return this->thread_state();
-    }
-    this->isRunning_f.store(true, std::memory_order_relaxed);
-    this->thread_f.start();
-    return this->thread_state();
-}
-
-ThreadState
-CanThread::stop() & {
-    if (!this->thread_f.is_running()) {
-        return this->thread_state();
-    }
-    this->isRunning_f.store(false, std::memory_order_relaxed);
-    this->thread_f.stop();
-    return this->thread_state();
-}
-
-const ThreadIdentity&
-CanThread::thread_identity() const& {
-    return this->thread_f.thread_identity();
-}
-
-ThreadState
-CanThread::thread_state() const& {
-    return this->thread_f.state();
-}
-
-ThreadCounterValue
-CanThread::thread_counter_value() const& {
-    return this->threadCounter_f.load();
-}
-
-const Thread&
-CanThread::backing_thread() const& {
-    return this->thread_f;
-}
-
-const EventBuffer&
-CanThread::ui_event_buffer() const& {
-    return this->uiEventBuffer_f;
-}
-
-const EventBuffer&
-CanThread::net_event_buffer() const& {
-    return this->netEventBuffer_f;
-}
-
-namespace {
-void
-log_linux_can_frame(const LinuxCanFrame& frame) {
-    // Below can become extremely stressful on the log thread, be careful
-    pican::log_verbose(
-        "{:03X} [{}] {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X}", frame.can_id, frame.can_dlc,
-        frame.data[0], frame.data[1], frame.data[2], frame.data[3], frame.data[4], frame.data[5], frame.data[6],
-        frame.data[7]
-    );
-}
-}  // namespace
-
-/* static */
-void
-CanThread::runnable(CanThread* self) {
-    LinuxCanFrame linuxFrame{};
-    pican::can::Event event{};
-    const ssize_t expectedReadBytes = static_cast<ssize_t>(sizeof(LinuxCanFrame));
-
-    while (self->isRunning_f.load()) {
-        self->threadCounter_f.atomic().fetch_add(1);
-        // block read until a frame is found or a timeout happens
-
-        const ssize_t readBytes = ::read(self->socketFd_f, &linuxFrame, sizeof(struct can_frame));
-
-        if (!self->isRunning_f.load()) {
-            break;
-        }
-
-        // bad case, no frame read
-        if (readBytes < 0) {
-            const int err = errno;
-            switch (err) {
-                case EAGAIN: {
-                    pican::log_warn("read() timed out");
-                    break;
-                }
-                case EBADF: {
-                    pican::log_warn("socket was closed");
-                    break;
-                }
-                default: {
-                    pican::log_warn("unknown error: {} {}", ::strerrorname_np(err), ::strerror(errno));
-                    break;
-                }
-            }
-            continue;
-        }
-
-        // unexpected read bytes size, probably incomplete frame
-        if (readBytes < expectedReadBytes) {
-            pican::log_warn("Incomplete CAN frame read");
-            continue;
-        }
-        // happy path
-        CONTRACTS_ASSERT(readBytes == expectedReadBytes);
-
-        log_linux_can_frame(linuxFrame);
-
-        event.set_from_linux_can_frame(linuxFrame);
-
-        self->uiEventBuffer_f.push_copy(event);
-        self->netEventBuffer_f.push_copy(event);
-    }
 }
 
 }  // namespace pican::can
