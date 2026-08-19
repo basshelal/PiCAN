@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "pican/mem/Manager.hpp"
+#include "pican/mem/Manager.cppm"
 #include "stacktrace/StackTrace.hpp"
 #include "test/Heap.hpp"
 

@@ -1,0 +1,105 @@
+module;
+
+#include <chrono>
+#include <cstdlib>
+#include <cstring>
+#include <string_view>
+#include <utility>
+
+#include <pthread.h>
+#include <unistd.h>
+
+#include "stacktrace/StackTrace.hpp"
+
+export module pican.core:functions;
+
+import :types;
+
+export namespace pican {
+
+template<typename TP>
+constexpr TP
+clamp(const TP& min, const TP& val, const TP& max) {
+    if (val < min) {
+        return min;
+    } else if (val > max) {
+        return max;
+    } else {
+        return val;
+    }
+}
+
+[[noreturn]]
+inline void
+exit_immediately() {
+    std::_Exit(1);
+}
+
+// TODO @basshelal Tue 03-Feb-2026 : Allow for fmt formatting here maybe?
+[[noreturn]]
+inline void
+panic(const std::string_view& message) {
+    ::write(STDERR_FILENO, message.data(), message.length());
+    ::write(STDERR_FILENO, "\n", 1);
+    stacktrace::print_stacktrace(stderr);
+    pican::exit_immediately();
+}
+
+[[noreturn]]
+inline void
+unreachable() {
+    panic("Unreachable!");
+}
+
+[[nodiscard]]
+Milliseconds
+get_current_millis() {
+    using namespace std;
+    const chrono::time_point<chrono::system_clock> now = chrono::system_clock::now();
+    const chrono::milliseconds sinceEpoch = chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+
+    return sinceEpoch.count();
+}
+
+[[noreturn]]
+inline void
+todo(const std::string_view& message) {
+    pican::panic(message);
+}
+
+template<typename TP, typename... Args>
+constexpr TP*
+construct_at(TP* location, Args&&... args) {
+    if constexpr (std::is_array_v<TP>) {
+        return ::new (std::addressof(*location)) TP[1]();
+    } else {
+        return ::new (std::addressof(*location)) TP(std::forward<Args>(args)...);
+    }
+}
+
+constexpr std::uint64_t FNV_OFFSET = 2'166'136'261u;
+constexpr std::uint64_t FNV_PRIME = 16'777'619u;
+
+// use Fowler-Noll-Vo (FNV-1a) hashing algorithm
+inline std::uint64_t
+fnv1a_bytes(const void* data, std::size_t len) {
+    const std::uint8_t* ptr = static_cast<const std::uint8_t*>(data);
+    std::uint64_t hash = FNV_OFFSET;
+
+    for (std::size_t i = 0; i < len; ++i) {
+        hash ^= ptr[i];
+        hash *= FNV_PRIME;
+    }
+    return hash;
+}
+
+template<typename TP>
+Index
+hash(const TP& val) {
+    // Check if it's safe to hash raw bytes (Standard Layout)
+    static_assert(std::is_standard_layout<TP>::value, "Must be Standard Layout!");
+
+    return pican::fnv1a_bytes(&val, sizeof(TP));
+}
+
+}  // namespace pican

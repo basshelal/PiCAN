@@ -1,4 +1,4 @@
-#include "pican/FileBuffer.hpp"
+#include "../src/pican/fs/FileBuffer.hpp"
 
 #include "test/TestUtils.hpp"
 

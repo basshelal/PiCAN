@@ -1,6 +1,6 @@
 #define CONTRACTS_ENABLED 1
 
-#include "pican/Contracts.hpp"
+#include "pican/contracts.hpp"
 #include "test/TestUtils.hpp"
 
 #define TEST_SUITE_NAME Contracts

@@ -1,6 +1,6 @@
 #include <string_view>
 
-#include "pican/RingBuffer.hpp"
+#include "../src/pican/ds/RingBuffer.cppm"
 #include "test/Heap.hpp"
 #include "test/TestUtils.hpp"
 #include "test/Tracked.hpp"
@@ -21,7 +21,7 @@ TEST(create) {
     const pican::Count capacity = 8;
 
     mem::Block block = pican::mem::Manager::get_block(sizeof(Element) * (capacity + 1));
-    Array<Element> array{block};
+    Array<Element> array = Array<Element>::initialize_by_copy(block, Element{});
 
     const RingBufferOverflowBehavior overflowBehavior = RingBufferOverflowBehavior::DEFAULT;
 
@@ -40,7 +40,7 @@ TEST(push_copy) {
     const pican::Count capacity = 8;
 
     mem::Block block = pican::mem::Manager::get_block(sizeof(Element) * (capacity + 1));
-    Array<Element> array{block};
+    Array<Element> array = Array<Element>::initialize_by_copy(block, Element{});
 
     const RingBufferOverflowBehavior overflowBehavior = RingBufferOverflowBehavior::DEFAULT;
 

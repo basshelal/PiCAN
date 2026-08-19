@@ -1,7 +1,7 @@
 #include <string>
 
-#include "pican/Result.hpp"
-#include "pican/Utils.hpp"
+#include "../src/pican/core/Result.cppm"
+#include "../src/pican/core/utils.cppm"
 #include "test/TestUtils.hpp"
 #include "test/Tracked.hpp"
 
@@ -253,6 +253,28 @@ TEST(success_value_or_else_mut__failure) {
     SuccessType successValueCopy = result.success_value_or_else(defaultValue);
     ASSERT_EQUAL(defaultValue.data, successValueRef.data);
     ASSERT_NOT_EQUAL(successData, successValueRef.data);
+
+    ASSERT_EQUAL(LifetimeOperation::COPY_CONSTRUCTOR, successValueCopy.lastOperation);
+    ASSERT_EQUAL(1, successValueCopy.copyCount);
+    ASSERT_EQUAL(0, successValueCopy.moveCount);
+}
+
+TEST(success_extract_value_or_panic) {
+    const std::string successData{"success"};
+    ResultType result = ResultType::success_emplace(successData);
+
+    ASSERT_RESULT_IS_SUCCESS(result);
+
+    const SuccessType &successValue = result.success_extract_value_or_panic();
+
+    ASSERT_EQUAL(successData, successValueRef.data);
+
+    ASSERT_EQUAL(LifetimeOperation::CONSTRUCTOR, successValueRef.lastOperation);
+    ASSERT_EQUAL(0, successValueRef.copyCount);
+    ASSERT_EQUAL(0, successValueRef.moveCount);
+
+    SuccessType successValueCopy = result.success_value_or_panic();
+    ASSERT_EQUAL(successData, successValueCopy.data);
 
     ASSERT_EQUAL(LifetimeOperation::COPY_CONSTRUCTOR, successValueCopy.lastOperation);
     ASSERT_EQUAL(1, successValueCopy.copyCount);

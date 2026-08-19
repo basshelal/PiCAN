@@ -1,4 +1,4 @@
-#include "pican/mem/Manager.hpp"
+#include "pican/mem/Manager.cppm"
 
 #include "test/TestUtils.hpp"
 

@@ -40,12 +40,6 @@ public:  // member fields
     LifetimeOperation lastOperation = LifetimeOperation::NONE;
     LifetimeCallbacks callbacks;
 
-    // LifetimeCallback onCopyConstructor;
-    // LifetimeCallback onMoveConstructor;
-    // LifetimeCallback onCopyAssignment;
-    // LifetimeCallback onMoveAssignment;
-    // LifetimeCallback onDestructor;
-
 public:  // constructors
     explicit Tracked(
         TP data, LifetimeCallback onConstructor = DEFAULT_LIFETIME_CALLBACK,

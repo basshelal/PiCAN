@@ -1,4 +1,4 @@
-#include "pican/info/MemoryReader.hpp"
+#include "pican/info/MemoryReader.cppm"
 
 #include "test/TestUtils.hpp"
 

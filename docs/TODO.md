@@ -4,6 +4,17 @@
 
 ## Doing
 
+* Git commit whatever we have so that we can save our switch to modules
+* Comment out all code so that we can have tests running for absolute basic units and modules
+* Switch to Catch2 for tests so that we can make use of GENERATEs etc
+
+
+* IMPORTANT! FIX all in place data holders (like Result and RingBuffer and Array) to ensure
+  that copy assignment operators don't happen on uninitialized garbage data, use placement new and remember 
+  destructor logic too
+* Continue testing Array and Map, possibly removing ArrayList
+* CanThread rate limiting (250ms maybe)
+* CanThread delta encoding, ignore frames that have not changed since last check
 * info thread for reading and capturing system and process info
 * Initialization flags through command line flag parsing and environment variables
 * Filter CAN frames to what we can decode/parse and are interested in
@@ -21,6 +32,8 @@
 
 ## Will Do
 
+* Switch to Catch2
+* Consider a CI system or something like that maybe?
 * Pre-allocate and start all Threads, should have 1 UI thread, 1 CAN Thread (reading, processing etc.),
   1 or 2 IO Threads for 4G and disk writing/logging
   * CAN Thread: Reads, filters, processes CAN frames to push into a CANBuffer (map of CAN ID -> RingBuffer)

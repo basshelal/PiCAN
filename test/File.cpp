@@ -1,7 +1,6 @@
-#include "pican/File.hpp"
+#include "../src/pican/fs/File.hpp"
 
-#include <pican/mem/Manager.hpp>
-
+#include "pican/mem/Manager.cppm"
 #include "test/TestUtils.hpp"
 
 #define TEST_SUITE_NAME File

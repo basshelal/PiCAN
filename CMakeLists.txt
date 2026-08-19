@@ -4,12 +4,13 @@ project(PiCAN
         LANGUAGES CXX C
 )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# TODO improve this mold stuff, it should default to on when found unless specified with an option
+# TODO take improvements from work, use mold and sccache and ensure parallel building to maximize performance
+#  have warnings if these things aren't enabled
 find_program(MOLD_EXECUTABLE NAMES mold)
 if (MOLD_EXECUTABLE)
     set(MOLD_DEFAULT_STATUS ON)
@@ -27,17 +28,18 @@ else ()
     message("Not using mold linker")
 endif ()
 
-add_compile_options(-fno-exceptions -fno-unwind-tables)
+add_compile_options(-fno-exceptions -fno-unwind-tables -fno-rtti)
 add_compile_options(-Wall -Werror -pedantic -Wno-interference-size -Wno-attributes=pican::)
 
 # CPM for package/dependency management, see: https://github.com/cpm-cmake/CPM.cmake
 include(cmake/CPM.cmake)
 
+set(FMT_MODULE ON CACHE BOOL "Build the fmt module" FORCE)
 # fmt: String formatting
 CPMAddPackage(
         NAME fmt
         GITHUB_REPOSITORY fmtlib/fmt
-        GIT_TAG 12.1.0
+        GIT_TAG 12.2.0
 )
 
 # magic_enum: Better enums
@@ -68,6 +70,7 @@ find_program(CLANG_FORMAT_EXE NAMES "clang-format")
 if (CLANG_FORMAT_EXE)
     # A. The "Check" Target (For CI/Audits) - Fails if code is messy
     file(GLOB_RECURSE SOURCES_TO_FORMAT
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cppm"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/src//*.c"
