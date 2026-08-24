@@ -8,6 +8,7 @@
 #include <backtrace.h>
 #include <unistd.h>
 
+// TODO @basshelal Wed 19-Aug-2026 : Switch to modules when possible
 namespace stacktrace {
 
 namespace {
@@ -119,6 +120,9 @@ initialize(char** argv) {
     libbacktraceState_g = backtrace_create_state(programPath, 1, error_callback, nullptr);
 }
 
+// TODO @basshelal Wed 19-Aug-2026 : Add a small helper to allow for using a kernel temp fd to be able to
+//  get the current stacktrace onto a byte buffer so that we can test or print it in our own way (for example,
+//  manipulate or format the text data somehow)
 void
 print_stacktrace(std::FILE* file, int skipFrames) {
     const int fd = ::fileno(file);

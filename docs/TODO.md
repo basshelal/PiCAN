@@ -4,10 +4,14 @@
 
 ## Doing
 
-* Git commit whatever we have so that we can save our switch to modules
-* Comment out all code so that we can have tests running for absolute basic units and modules
-* Switch to Catch2 for tests so that we can make use of GENERATEs etc
-
+* Comment out all code so that we can have tests running for absolute basic units and modules, tests are black-box only!
+  * Testing utils and organize structure of tests to something that makes sense
+  * noheap and stacktrace
+  * core
+  * mem
+  * ds
+  * fs
+  * ...
 
 * IMPORTANT! FIX all in place data holders (like Result and RingBuffer and Array) to ensure
   that copy assignment operators don't happen on uninitialized garbage data, use placement new and remember 

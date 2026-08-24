@@ -11,6 +11,8 @@
 
 #include "stacktrace/StackTrace.hpp"
 
+// TODO @basshelal Wed 19-Aug-2026 : Consider making this implementation the implementation in noheap, meaning, make
+//  noheap more powerful so that we don't have code duplication and so that we can MAYBE even be able to test noheap
 namespace {
 alignas(64) static std::atomic<bool> heapSealed_g{false};
 alignas(64) static std::atomic<size_t> allocationsCount_g{0};

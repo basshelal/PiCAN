@@ -1,10 +1,11 @@
 #include <cstdio>
 
-#include <gtest/gtest.h>
+#include <catch2/catch_session.hpp>
 
-#include "pican/mem/Manager.cppm"
 #include "stacktrace/StackTrace.hpp"
 #include "test/Heap.hpp"
+
+import pican.mem;
 
 namespace {
 void
@@ -19,12 +20,11 @@ int
 main(int argc, char** argv) {
     test::heap::unseal_heap();
     initialize_memory_manager();
-
-    ::testing::InitGoogleTest(&argc, argv);
-
     stacktrace::initialize(argv);
 
-    int allTestsRun = RUN_ALL_TESTS();
+    Catch::Session test_session{};
+
+    int allTestsRun = test_session.run(argc, argv);
 
     return allTestsRun;
 }

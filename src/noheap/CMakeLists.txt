@@ -2,6 +2,6 @@ file(GLOB_RECURSE NOHEAP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 add_library(NOHEAP_LIB STATIC ${NOHEAP_SOURCES})
 
-target_link_libraries(NOHEAP_LIB PUBLIC )
+target_link_libraries(NOHEAP_LIB PUBLIC)
 
 target_include_directories(NOHEAP_LIB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)

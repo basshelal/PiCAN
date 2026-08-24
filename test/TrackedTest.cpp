@@ -1,71 +1,90 @@
-#include "test/Heap.hpp"
-#include "test/TestUtils.hpp"
+#include "catch2/catch_all.hpp"
 #include "test/Tracked.hpp"
 
-#define TEST_SUITE_NAME Tracked
+using LifeTimeCallback = Tracked<std::string>::LifetimeCallback;
+using LifeTimeCallbacks = Tracked<std::string>::LifetimeCallbacks;
 
-TEST(argument_constructor) {
+TEST_CASE("Tracked") {
     const std::string data{"element"};
-    const Tracked<std::string> tracked{data};
+    bool called = false;
 
-    ASSERT_EQUAL(data, tracked.data);
-    ASSERT_EQUAL(LifetimeOperation::CONSTRUCTOR, tracked.lastOperation);
-    ASSERT_EQUAL(0, tracked.copyCount);
-    ASSERT_EQUAL(0, tracked.moveCount);
-}
+    const LifeTimeCallback default_callback = [&called](const auto&) {
+        called = true;
+    };
+    CHECK_FALSE(called);
 
-TEST(copy_constructor) {
-    const std::string data{"element"};
-    const Tracked<std::string> original{"element"};
-    const Tracked<std::string> copy{original};
+    SECTION("Parameterized constructor") {
+        const LifeTimeCallbacks callbacks{.onConstructor = default_callback};
+        const Tracked<std::string> tracked{data, callbacks};
 
-    ASSERT_EQUAL(data, copy.data);
-    ASSERT_EQUAL(LifetimeOperation::COPY_CONSTRUCTOR, copy.lastOperation);
-    ASSERT_EQUAL(1, copy.copyCount);
-    ASSERT_EQUAL(0, copy.moveCount);
+        CHECK(tracked.data == data);
+        CHECK(tracked.lastOperation == LifetimeOperation::CONSTRUCTOR);
+        CHECK(tracked.copyCount == 0);
+        CHECK(tracked.moveCount == 0);
+        CHECK(called);
+    }
 
-    ASSERT_EQUAL(data, original.data);
-    ASSERT_EQUAL(LifetimeOperation::CONSTRUCTOR, original.lastOperation);
-    ASSERT_EQUAL(0, original.copyCount);
-    ASSERT_EQUAL(0, original.moveCount);
-}
+    SECTION("Copy constructor") {
+        const LifeTimeCallbacks callbacks{.onCopyConstructor = default_callback};
+        const Tracked<std::string> original{"element", callbacks};
+        CHECK_FALSE(called);
+        const Tracked<std::string> copy{original};
 
-TEST(copy_assignment) {
-    const std::string data{"element"};
-    const Tracked<std::string> original{"element"};
-    Tracked<std::string> copy{};
-    copy = original;
+        CHECK(called);
+        CHECK(copy.data == data);
+        CHECK(copy.lastOperation == LifetimeOperation::COPY_CONSTRUCTOR);
+        CHECK(copy.copyCount == 1);
+        CHECK(copy.moveCount == 0);
 
-    ASSERT_EQUAL(data, copy.data);
-    ASSERT_EQUAL(LifetimeOperation::COPY_ASSIGNMENT, copy.lastOperation);
-    ASSERT_EQUAL(1, copy.copyCount);
-    ASSERT_EQUAL(0, copy.moveCount);
+        CHECK(original.data == data);
+        CHECK(original.lastOperation == LifetimeOperation::CONSTRUCTOR);
+        CHECK(original.copyCount == 0);
+        CHECK(original.moveCount == 0);
+    }
 
-    ASSERT_EQUAL(data, original.data);
-    ASSERT_EQUAL(LifetimeOperation::CONSTRUCTOR, original.lastOperation);
-    ASSERT_EQUAL(0, original.copyCount);
-    ASSERT_EQUAL(0, original.moveCount);
-}
+    SECTION("Copy assignment") {
+        const LifeTimeCallbacks callbacks{.onCopyAssignment = default_callback};
+        const Tracked<std::string> original{"element", callbacks};
+        Tracked<std::string> copy{};
+        CHECK_FALSE(called);
+        copy = original;
 
-TEST(move_constructor) {
-    const std::string data{"element"};
-    Tracked<std::string> original{"element"};
-    const Tracked<std::string> copy{std::move(original)};
+        CHECK(called);
+        CHECK(copy.data == data);
+        CHECK(copy.lastOperation == LifetimeOperation::COPY_ASSIGNMENT);
+        CHECK(copy.copyCount == 1);
+        CHECK(copy.moveCount == 0);
 
-    ASSERT_EQUAL(data, copy.data);
-    ASSERT_EQUAL(LifetimeOperation::MOVE_CONSTRUCTOR, copy.lastOperation);
-    ASSERT_EQUAL(0, copy.copyCount);
-    ASSERT_EQUAL(1, copy.moveCount);
-}
+        CHECK(original.data == data);
+        CHECK(original.lastOperation == LifetimeOperation::CONSTRUCTOR);
+        CHECK(original.copyCount == 0);
+        CHECK(original.moveCount == 0);
+    }
 
-TEST(move_assignment) {
-    const std::string data{"element"};
-    Tracked<std::string> original{"element"};
-    Tracked<std::string> copy{};
-    copy = std::move(original);
+    SECTION("Move constructor") {
+        const LifeTimeCallbacks callbacks{.onMoveConstructor = default_callback};
+        Tracked<std::string> original{"element", callbacks};
+        CHECK_FALSE(called);
+        const Tracked<std::string> copy{std::move(original)};
 
-    ASSERT_EQUAL(data, copy.data);
-    ASSERT_EQUAL(LifetimeOperation::MOVE_ASSIGNMENT, copy.lastOperation);
-    ASSERT_EQUAL(0, copy.copyCount);
-    ASSERT_EQUAL(1, copy.moveCount);
+        CHECK(called);
+        CHECK(copy.data == data);
+        CHECK(copy.lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR);
+        CHECK(copy.copyCount == 0);
+        CHECK(copy.moveCount == 1);
+    }
+
+    SECTION("Move assignment") {
+        const LifeTimeCallbacks callbacks{.onMoveAssignment = default_callback};
+        Tracked<std::string> original{"element", callbacks};
+        Tracked<std::string> copy{};
+        CHECK_FALSE(called);
+        copy = std::move(original);
+
+        CHECK(called);
+        CHECK(copy.data == data);
+        CHECK(copy.lastOperation == LifetimeOperation::MOVE_ASSIGNMENT);
+        CHECK(copy.copyCount == 0);
+        CHECK(copy.moveCount == 1);
+    }
 }

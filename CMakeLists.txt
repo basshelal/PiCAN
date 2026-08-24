@@ -46,15 +46,14 @@ CPMAddPackage(
 CPMAddPackage(
         NAME magic_enum
         GITHUB_REPOSITORY Neargye/magic_enum
-        GIT_TAG v0.9.7
+        GIT_TAG v0.9.8
 )
 
-# GoogleTest: Unit testing
+# Catch2: Unit testing
 CPMAddPackage(
-        NAME googletest
-        GITHUB_REPOSITORY google/googletest
-        GIT_TAG v1.17.0
-        OPTIONS "INSTALL_GTEST OFF" "gtest_force_shared_crt ON"
+        NAME Catch2
+        GITHUB_REPOSITORY catchorg/Catch2
+        VERSION 3.15.3
 )
 
 # libbacktrace
@@ -136,16 +135,16 @@ endif ()
 # Make git use .githooks/ as its git hooks directory, this way,
 # our hooks are tracked in git and can run out of the box after a git clone
 find_package(Git)
-if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+if (GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
     execute_process(
             COMMAND ${GIT_EXECUTABLE} config core.hooksPath .githooks
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             RESULT_VARIABLE GIT_CONFIG_RESULT
     )
 
-    if(GIT_CONFIG_RESULT EQUAL 0)
+    if (GIT_CONFIG_RESULT EQUAL 0)
         message(STATUS "Git Hooks successfully configured to use '.githooks/'")
-    else()
+    else ()
         message(WARNING "Failed to configure Git Hooks.")
-    endif()
-endif()
+    endif ()
+endif ()

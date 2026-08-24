@@ -20,7 +20,7 @@
   "buildPresets": [
     {
       "name": "debug-app",
-      "displayName": "debug build preset for app (no tests)",
+      "displayName": "debug app (no tests)",
       "targets": [
         "PiCAN"
       ],
@@ -28,7 +28,7 @@
     },
     {
       "name": "debug-test",
-      "displayName": "debug build preset for tests",
+      "displayName": "debug tests",
       "targets": [
         "PiCAN_Test"
       ],

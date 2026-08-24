@@ -1,0 +1,13 @@
+# Global rules (applies everywhere)
+CompileFlags:
+  Add:
+    - "-Wno-c2y-extensions"
+    - "-Wno-gnu-counter"
+
+---
+# Test directory rules (overrides)
+If:
+  PathMatch: "test/.*"
+CompileFlags:
+  # Strip the ultra-strict flags so Catch2 macros don't paint the editor red
+  Remove: ["-Werror", "-pedantic"]

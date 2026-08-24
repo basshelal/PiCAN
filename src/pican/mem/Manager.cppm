@@ -3,8 +3,8 @@ module;
 
 #include <sys/mman.h>
 
-#include "pican/macros.hpp"
 #include "pican/contracts.hpp"
+#include "pican/macros.hpp"
 
 export module pican.mem:Manager;
 
@@ -197,4 +197,6 @@ private:  // helper functions
         return instance.address_f + instance.headOffset_f;
     }
 };
+
+Manager* Manager::instance_sf = nullptr;
 }  // namespace pican::mem

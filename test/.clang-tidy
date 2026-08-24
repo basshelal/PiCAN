@@ -1,0 +1,14 @@
+# Inherit everything from the parent directory's .clang-tidy
+InheritParentConfig: true
+
+# Disable the specific checks that Catch2 macros violate natively
+Checks: >
+  -cert-err58-cpp,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -readability-function-cognitive-complexity,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-special-member-functions,
+  -readability-magic-numbers,
+  -fuchsia-default-arguments-calls

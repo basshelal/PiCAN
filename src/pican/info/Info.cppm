@@ -6,7 +6,7 @@ export module pican.info:Info;
 
 import pican.core;
 
-namespace pican::info {
+export namespace pican::info {
 
 using Percentage = float;
 using Hertz = std::uint32_t;

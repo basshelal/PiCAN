@@ -77,7 +77,7 @@ public:  // getters
     [[nodiscard]]
     inline Count
     size() const& {
-        return this->elementsCount_f;
+        return this->elements_f.size();
     }
 
 public:  // member functions

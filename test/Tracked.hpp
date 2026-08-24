@@ -6,6 +6,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+// TODO @basshelal Mon 24-Aug-2026 : Convert to module??
 enum class LifetimeOperation : uint8_t {
     NONE,
     CONSTRUCTOR,
@@ -20,17 +21,20 @@ class Tracked {
 public:  // types
     using LifetimeCallback = std::function<void(const Tracked<TP>&)>;
 
-    struct LifetimeCallbacks {
-        LifetimeCallback onConstructor;
-        LifetimeCallback onCopyConstructor;
-        LifetimeCallback onMoveConstructor;
-        LifetimeCallback onCopyAssignment;
-        LifetimeCallback onMoveAssignment;
-        LifetimeCallback onDestructor;
-    };
-
 public:  // constants
     static constexpr auto DEFAULT_LIFETIME_CALLBACK = [](const Tracked<TP>&) -> void {
+    };
+
+    static_assert(std::is_convertible_v<decltype(DEFAULT_LIFETIME_CALLBACK), LifetimeCallback>);
+
+public:  // types
+    struct LifetimeCallbacks {
+        LifetimeCallback onConstructor = DEFAULT_LIFETIME_CALLBACK;
+        LifetimeCallback onCopyConstructor = DEFAULT_LIFETIME_CALLBACK;
+        LifetimeCallback onMoveConstructor = DEFAULT_LIFETIME_CALLBACK;
+        LifetimeCallback onCopyAssignment = DEFAULT_LIFETIME_CALLBACK;
+        LifetimeCallback onMoveAssignment = DEFAULT_LIFETIME_CALLBACK;
+        LifetimeCallback onDestructor = DEFAULT_LIFETIME_CALLBACK;
     };
 
 public:  // member fields
@@ -41,17 +45,9 @@ public:  // member fields
     LifetimeCallbacks callbacks;
 
 public:  // constructors
-    explicit Tracked(
-        TP data, LifetimeCallback onConstructor = DEFAULT_LIFETIME_CALLBACK,
-        LifetimeCallback onCopyConstructor = DEFAULT_LIFETIME_CALLBACK,
-        LifetimeCallback onMoveConstructor = DEFAULT_LIFETIME_CALLBACK,
-        LifetimeCallback onCopyAssignment = DEFAULT_LIFETIME_CALLBACK,
-        LifetimeCallback onMoveAssignment = DEFAULT_LIFETIME_CALLBACK,
-        LifetimeCallback onDestructor = DEFAULT_LIFETIME_CALLBACK
-    ) :
+    explicit Tracked(TP data, const LifetimeCallbacks& callbacks = LifetimeCallbacks{}) :
         data{std::move(data)}, copyCount{0}, moveCount{0}, lastOperation{LifetimeOperation::CONSTRUCTOR},
-        callbacks{std::move(onConstructor),    std::move(onCopyConstructor), std::move(onMoveConstructor),
-                  std::move(onCopyAssignment), std::move(onMoveAssignment),  std::move(onDestructor)} {
+        callbacks{callbacks} {
         this->callbacks.onConstructor(*this);
     }
 
