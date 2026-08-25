@@ -5,7 +5,6 @@
 ## Doing
 
 * Comment out all code so that we can have tests running for absolute basic units and modules, tests are black-box only!
-  * Testing utils and organize structure of tests to something that makes sense
   * noheap and stacktrace
   * core
   * mem

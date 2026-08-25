@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include <atomic>
 #include <memory>
@@ -6,6 +6,9 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+export module pican.test_utils:Tracked;
+
+export namespace pican::test_utils {
 // TODO @basshelal Mon 24-Aug-2026 : Convert to module??
 enum class LifetimeOperation : uint8_t {
     NONE,
@@ -124,3 +127,4 @@ public:  // friends
         return stream << to_string(tracked);
     }
 };
+}  // namespace pican::test_utils

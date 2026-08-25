@@ -1,8 +1,12 @@
 #include "catch2/catch_all.hpp"
-#include "test/Tracked.hpp"
 
-using LifeTimeCallback = Tracked<std::string>::LifetimeCallback;
-using LifeTimeCallbacks = Tracked<std::string>::LifetimeCallbacks;
+import pican.test_utils;
+
+using pican::test_utils::LifetimeOperation;
+using Tracked = pican::test_utils::Tracked<std::string>;
+
+using LifeTimeCallback = Tracked::LifetimeCallback;
+using LifeTimeCallbacks = Tracked::LifetimeCallbacks;
 
 TEST_CASE("Tracked") {
     const std::string data{"element"};
@@ -15,7 +19,7 @@ TEST_CASE("Tracked") {
 
     SECTION("Parameterized constructor") {
         const LifeTimeCallbacks callbacks{.onConstructor = default_callback};
-        const Tracked<std::string> tracked{data, callbacks};
+        const Tracked tracked{data, callbacks};
 
         CHECK(tracked.data == data);
         CHECK(tracked.lastOperation == LifetimeOperation::CONSTRUCTOR);
@@ -26,9 +30,9 @@ TEST_CASE("Tracked") {
 
     SECTION("Copy constructor") {
         const LifeTimeCallbacks callbacks{.onCopyConstructor = default_callback};
-        const Tracked<std::string> original{"element", callbacks};
+        const Tracked original{"element", callbacks};
         CHECK_FALSE(called);
-        const Tracked<std::string> copy{original};
+        const Tracked copy{original};
 
         CHECK(called);
         CHECK(copy.data == data);
@@ -44,8 +48,8 @@ TEST_CASE("Tracked") {
 
     SECTION("Copy assignment") {
         const LifeTimeCallbacks callbacks{.onCopyAssignment = default_callback};
-        const Tracked<std::string> original{"element", callbacks};
-        Tracked<std::string> copy{};
+        const Tracked original{"element", callbacks};
+        Tracked copy{};
         CHECK_FALSE(called);
         copy = original;
 
@@ -63,9 +67,9 @@ TEST_CASE("Tracked") {
 
     SECTION("Move constructor") {
         const LifeTimeCallbacks callbacks{.onMoveConstructor = default_callback};
-        Tracked<std::string> original{"element", callbacks};
+        Tracked original{"element", callbacks};
         CHECK_FALSE(called);
-        const Tracked<std::string> copy{std::move(original)};
+        const Tracked copy{std::move(original)};
 
         CHECK(called);
         CHECK(copy.data == data);
@@ -76,8 +80,8 @@ TEST_CASE("Tracked") {
 
     SECTION("Move assignment") {
         const LifeTimeCallbacks callbacks{.onMoveAssignment = default_callback};
-        Tracked<std::string> original{"element", callbacks};
-        Tracked<std::string> copy{};
+        Tracked original{"element", callbacks};
+        Tracked copy{};
         CHECK_FALSE(called);
         copy = std::move(original);
 

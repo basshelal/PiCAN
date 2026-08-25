@@ -16,8 +16,9 @@ set_target_properties(${TEST_EXECUTABLE} PROPERTIES
 )
 
 target_link_libraries(${TEST_EXECUTABLE} PRIVATE
-        PICAN_LIB
         STACKTRACE_LIB
+        HEAP_LIB
+        PICAN_LIB
         Catch2::Catch2
 )
 
@@ -36,4 +37,5 @@ target_link_options(${TEST_EXECUTABLE} PRIVATE
         "LINKER:--wrap=free"
         "LINKER:--wrap=calloc"
         "LINKER:--wrap=realloc"
+        "LINKER:--wrap=aligned_alloc"
 )

@@ -3,9 +3,9 @@
 #include <catch2/catch_session.hpp>
 
 #include "stacktrace/StackTrace.hpp"
-#include "test/Heap.hpp"
 
 import pican.mem;
+import heap;
 
 namespace {
 void
@@ -18,7 +18,7 @@ initialize_memory_manager() {
 
 int
 main(int argc, char** argv) {
-    test::heap::unseal_heap();
+    heap::unseal_heap();
     initialize_memory_manager();
     stacktrace::initialize(argv);
 

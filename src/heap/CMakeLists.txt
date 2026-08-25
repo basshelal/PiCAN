@@ -1,0 +1,21 @@
+file(GLOB_RECURSE HEAP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB_RECURSE HEAP_MODULES "${CMAKE_CURRENT_SOURCE_DIR}/*.cppm")
+
+add_library(HEAP_LIB STATIC ${HEAP_SOURCES})
+
+target_sources(HEAP_LIB
+        PUBLIC
+        FILE_SET CXX_MODULES
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/..
+        FILES ${HEAP_MODULES}
+)
+
+set_target_properties(HEAP_LIB PROPERTIES
+        CXX_STANDARD 23
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+)
+
+target_link_libraries(HEAP_LIB PUBLIC)
+
+target_include_directories(HEAP_LIB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
