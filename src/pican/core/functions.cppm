@@ -9,11 +9,10 @@ module;
 #include <pthread.h>
 #include <unistd.h>
 
-#include "stacktrace/StackTrace.hpp"
-
 export module pican.core:functions;
 
 import :types;
+import stacktrace;
 
 export namespace pican {
 

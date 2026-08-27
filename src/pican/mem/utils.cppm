@@ -4,10 +4,9 @@ module;
 #include <memory>
 #include <new>
 
-#include "stacktrace/StackTrace.hpp"
-
 export module pican.mem:utils;
 
+import stacktrace;
 import pican.core;
 
 export namespace pican::mem {
@@ -49,7 +48,7 @@ address_is_aligned(Address address, Alignment alignment) {
 [[noreturn]]
 inline void
 panic_out_of_memory() {
-    stacktrace::print_stacktrace();
+    stacktrace::print_stacktrace(stderr);
     pican::exit_immediately();
 }
 

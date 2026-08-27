@@ -16,6 +16,6 @@ set_target_properties(HEAP_LIB PROPERTIES
         CXX_EXTENSIONS OFF
 )
 
-target_link_libraries(HEAP_LIB PUBLIC)
+target_link_libraries(HEAP_LIB PUBLIC STACKTRACE_LIB)
 
 target_include_directories(HEAP_LIB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)

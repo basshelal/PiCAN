@@ -10,6 +10,8 @@ target_sources(PICAN_LIB
 )
 
 target_link_libraries(PICAN_LIB PUBLIC
+        STACKTRACE_LIB
+        HEAP_LIB
         fmt::fmt-module
         magic_enum::magic_enum
 )

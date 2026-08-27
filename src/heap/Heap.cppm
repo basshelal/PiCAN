@@ -10,10 +10,12 @@ module;
 
 #include <unistd.h>
 
-#include "stacktrace/StackTrace.hpp"
-
 export module heap;
 
+import stacktrace;
+
+// TODO @basshelal Thu 27-Aug-2026 : Add documentation for the module and possibly the functions but definitely
+//  something high-level
 export namespace heap {
 // TODO @basshelal Tue 25-Aug-2026 : Allow the callback to get a stacktrace somehow???
 using HeapSealedCallback = void (*)();

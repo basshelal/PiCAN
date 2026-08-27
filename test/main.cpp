@@ -2,10 +2,9 @@
 
 #include <catch2/catch_session.hpp>
 
-#include "stacktrace/StackTrace.hpp"
-
 import pican.mem;
 import heap;
+import stacktrace;
 
 namespace {
 void
