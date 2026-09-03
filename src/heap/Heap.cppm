@@ -17,15 +17,19 @@ import stacktrace;
 // TODO @basshelal Thu 27-Aug-2026 : Add documentation for the module and possibly the functions but definitely
 //  something high-level
 export namespace heap {
-// TODO @basshelal Tue 25-Aug-2026 : Allow the callback to get a stacktrace somehow???
-using HeapSealedCallback = void (*)();
+using ViolationCallback = void (*)(void* userData);
 }  // namespace heap
 
 namespace {
 
+struct CallbackData {
+    heap::ViolationCallback callback;
+    void* userData;
+};
+
 void
-default_heap_sealed_callback() {
-    std::string_view message{"Illegal heap usage!\nHeap has been sealed, stacktrace:\n\n"};
+default_violation_callback([[maybe_unused]] void* userData) {
+    std::string_view message{"Illegal heap usage!\nHeap has been sealed, stacktrace:\n"};
     ::write(STDERR_FILENO, message.data(), message.length());
     stacktrace::print_stacktrace(stderr, 1);
 
@@ -34,8 +38,8 @@ default_heap_sealed_callback() {
 
 alignas(std::hardware_destructive_interference_size) std::atomic<bool> heapSealed_g{false};
 alignas(std::hardware_destructive_interference_size) std::atomic<std::size_t> allocationsCount_g{0};
-alignas(std::hardware_destructive_interference_size) std::atomic<heap::HeapSealedCallback> heapSealedCallback_g{
-    default_heap_sealed_callback
+alignas(std::hardware_destructive_interference_size) std::atomic<CallbackData> violationCallback_g{
+    CallbackData{.callback = &default_violation_callback, .userData = nullptr}
 };
 
 void*
@@ -53,8 +57,10 @@ check_ptr_alloc(void* const ptr) {
 void
 check_heap_is_sealed() {
     if (heapSealed_g.load(std::memory_order::seq_cst)) {
-        const heap::HeapSealedCallback callback = heapSealedCallback_g.load(std::memory_order::seq_cst);
-        callback();
+        const CallbackData callbackData = violationCallback_g.load(std::memory_order::seq_cst);
+        if (callbackData.callback != nullptr) {
+            callbackData.callback(callbackData.userData);
+        }
     }
 }
 
@@ -108,58 +114,48 @@ __wrap_aligned_alloc(std::size_t alignment, std::size_t size) {
 }
 }
 
-// TODO @basshelal Tue 25-Aug-2026 : Test! We should check that we even need the heap sealed checks in the below
-//  functions, it might not be needed because we did the above stuff!
 extern "C++" {
 void*
 operator new(std::size_t size) {
-    check_heap_is_sealed();
     void* p = std::malloc(size);
     return check_ptr_alloc(p);
 }
 
 void*
 operator new[](std::size_t size) {
-    check_heap_is_sealed();
     void* p = std::malloc(size);
     return check_ptr_alloc(p);
 }
 
 void*
 operator new(std::size_t size, std::align_val_t align) {
-    check_heap_is_sealed();
     void* p = std::aligned_alloc(static_cast<size_t>(align), size);
     return check_ptr_alloc(p);
 }
 
 void*
 operator new[](std::size_t size, std::align_val_t align) {
-    check_heap_is_sealed();
     void* p = std::aligned_alloc(static_cast<size_t>(align), size);
     return check_ptr_alloc(p);
 }
 
 void*
 operator new(std::size_t size, const std::nothrow_t& tag) noexcept {
-    check_heap_is_sealed();
     return std::malloc(size);
 }
 
 void*
 operator new[](std::size_t size, const std::nothrow_t& tag) noexcept {
-    check_heap_is_sealed();
     return std::malloc(size);
 }
 
 void*
 operator new(std::size_t size, std::align_val_t align, const std::nothrow_t& tag) noexcept {
-    check_heap_is_sealed();
     return std::aligned_alloc(static_cast<size_t>(align), size);
 }
 
 void*
 operator new[](std::size_t size, std::align_val_t align, const std::nothrow_t& tag) noexcept {
-    check_heap_is_sealed();
     return std::aligned_alloc(static_cast<size_t>(align), size);
 }
 
@@ -225,7 +221,7 @@ operator delete[](void* ptr, std::align_val_t align, const std::nothrow_t& tag) 
 }
 
 export namespace heap {
-const HeapSealedCallback DEFAULT_ILLEGAL_HEAP_USAGE_CALLBACK = default_heap_sealed_callback;
+const ViolationCallback DEFAULT_ILLEGAL_HEAP_USAGE_CALLBACK = default_violation_callback;
 
 void
 seal_heap() {
@@ -250,8 +246,16 @@ allocations_count() {
 }
 
 void
-set_heap_sealed_callback(HeapSealedCallback callback) {
-    heapSealedCallback_g.store(callback, std::memory_order::seq_cst);
+set_violation_callback(ViolationCallback callback, void* userData) {
+    CallbackData callbackData{};
+    if (callback == nullptr) {
+        callbackData.callback = &default_violation_callback;
+        callbackData.userData = nullptr;
+    } else {
+        callbackData.callback = callback;
+        callbackData.userData = userData;
+    }
+    violationCallback_g.store(callbackData, std::memory_order::seq_cst);
 }
 
 }  // namespace heap

@@ -22,7 +22,7 @@
       "name": "debug-app",
       "displayName": "debug app (no tests)",
       "targets": [
-        "PiCAN"
+        "pican-app"
       ],
       "configurePreset": "debug-config"
     },
@@ -30,7 +30,7 @@
       "name": "debug-test",
       "displayName": "debug tests",
       "targets": [
-        "PiCAN_Test"
+        "pican-test"
       ],
       "configurePreset": "debug-config"
     }

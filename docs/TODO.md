@@ -4,8 +4,11 @@
 
 ## Doing
 
+* Need a venv for semgrep and start adding some more rules with Gemini's help
+* Make libbacktrace a CMake/cpm dependency using Gemini's help so that it doesn't need to be installed on the system
+* make contracts its own library thing so that it can be used in heap and stacktrace???
 * Comment out all code so that we can have tests running for absolute basic units and modules, tests are black-box only!
-  * noheap and stacktrace
+  * heap and stacktrace
   * core
   * mem
   * ds

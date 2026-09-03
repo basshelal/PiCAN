@@ -9,14 +9,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# TODO take improvements from work, use mold and sccache and ensure parallel building to maximize performance
-#  have warnings if these things aren't enabled
-find_program(MOLD_EXECUTABLE NAMES mold)
-if (MOLD_EXECUTABLE)
+find_program(MOLD_PROGRAM NAMES mold)
+if (MOLD_PROGRAM)
     set(MOLD_DEFAULT_STATUS ON)
 else ()
     set(MOLD_DEFAULT_STATUS OFF)
-    message(STATUS "mold linker not found, defaulting USE_MOLD_LINKER to OFF.")
+    message(WARNING "mold linker not found, defaulting USE_MOLD_LINKER to OFF.")
 endif ()
 
 option(USE_MOLD_LINKER "Use mold linker (if available)" ${MOLD_DEFAULT_STATUS})
@@ -26,6 +24,24 @@ if (USE_MOLD_LINKER)
     message("Using mold linker")
 else ()
     message("Not using mold linker")
+endif ()
+
+find_program(CCACHE_PROGRAM NAMES ccache)
+if (CCACHE_PROGRAM)
+    set(CCACHE_DEFAULT_STATUS ON)
+else ()
+    set(CCACHE_DEFAULT_STATUS OFF)
+    message(WARNING "ccache not found, defaulting USE_CCACHE to OFF")
+endif ()
+
+option(USE_CCACHE "Use ccache compiler cacher (if available)" ${CCACHE_DEFAULT_STATUS})
+
+if (USE_CCACHE)
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    message("Using ccache compiler cacher")
+else ()
+    message("Not using ccache compiler cacher")
 endif ()
 
 add_compile_options(-fno-exceptions -fno-unwind-tables -fno-rtti)
