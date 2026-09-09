@@ -1,34 +1,43 @@
 #include <cstddef>
 
 #include <catch2/catch_all.hpp>
-import heap;
-import stacktrace;
+
+import pican.core;
+import pican.heap;
+import pican.trace;
+
+struct Data {
+    bool called = false;
+    std::size_t sizeBytes = 0;
+};
 
 TEST_CASE("Heap") {
-    SECTION("Seal and unseal") {
-        // TODO(bxh) 02-Sep-26 23:46 Need a way to pass in data, use C style callbacks or allow C++ lambdas?
-        struct Data {
-            bool called = false;
-        };
-
+    SECTION("Seal and Unseal") {
         Data data;
-        heap::set_violation_callback(
-            [](void* userData) -> void {
+        REQUIRE(data.called == false);
+        REQUIRE(data.sizeBytes == 0);
+        pican::heap::set_violation_callback(
+            [](std::size_t sizeBytes, void* userData) -> void {
                 auto* data = static_cast<Data*>(userData);
-                const auto& entry = stacktrace::get_current_entry();
-                stacktrace::print_entry(entry, stderr);
                 data->called = true;
+                data->sizeBytes = sizeBytes;
             },
             &data
         );
+        REQUIRE(data.called == false);
+        pican::heap::seal_heap();
+        REQUIRE(pican::heap::heap_is_sealed());
+        const std::size_t allocations_count = pican::heap::allocations_count();
         [[maybe_unused]]
-        const std::size_t allocations_count = heap::allocations_count();
-        heap::seal_heap();
-        REQUIRE(heap::heap_is_sealed());
-        [[maybe_unused]]
-        auto s = new int;
+        int* unused = new int;
         REQUIRE(data.called);
-        heap::unseal_heap();
-        heap::set_violation_callback(nullptr, nullptr);
+        REQUIRE(data.sizeBytes == sizeof(int));
+        REQUIRE(pican::heap::allocations_count() == allocations_count);
+        pican::heap::unseal_heap();
+        pican::heap::reset_violation_callback();
+        data.called = false;
+        unused = new int;
+        REQUIRE(data.called == false);
+        REQUIRE(pican::heap::allocations_count() == (allocations_count + 1));
     }
 }

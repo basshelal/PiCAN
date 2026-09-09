@@ -13,8 +13,6 @@ module;
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "pican/contracts.hpp"
-
 export module pican.can:CanThread;
 
 import pican.core;

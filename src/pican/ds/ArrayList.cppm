@@ -2,8 +2,6 @@ module;
 
 #include <utility>
 
-#include "pican/contracts.hpp"
-
 export module pican.ds:ArrayList;
 
 import pican.core;

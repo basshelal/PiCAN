@@ -227,7 +227,7 @@ SpacesInLineCommentPrefix:
   Maximum: -1
 SpacesInParens: Never
 SpacesInSquareBrackets: false
-Standard: c++17
+Standard: Latest
 StatementAttributeLikeMacros:
   - Q_EMIT
 StatementMacros:

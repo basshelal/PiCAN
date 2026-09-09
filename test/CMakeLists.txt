@@ -16,8 +16,6 @@ set_target_properties(${TEST_EXECUTABLE} PROPERTIES
 )
 
 target_link_libraries(${TEST_EXECUTABLE} PRIVATE
-        STACKTRACE_LIB
-        HEAP_LIB
         PICAN_LIB
         Catch2::Catch2
 )

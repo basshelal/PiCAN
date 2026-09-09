@@ -1,11 +1,11 @@
 module;
 
 #include <cstdint>
-
-#include "pican/contracts.hpp"
+#include <utility>
 
 export module pican.mem:Arena;
 
+import pican.contracts;
 import pican.core;
 import :Block;
 
@@ -55,7 +55,7 @@ public:  // member functions
         }
 
         const Address address = this->head_address() + paddingRequired;
-        CONTRACTS_ASSERT(pican::mem::address_is_aligned(address, alignment));
+        (pican::mem::address_is_aligned(address, alignment));
         this->headOffset_f = newHeadOffset;
 
         return Block{address, size};
@@ -73,8 +73,8 @@ public:  // member functions
         if (ptr == pican::mem::ptr_to_address(nullptr)) {
             return nullptr;
         }
-        CONTRACTS_ASSERT(block.size_bytes() >= size);
-        CONTRACTS_ASSERT(pican::mem::address_is_aligned(ptr, alignment));
+        pican::contracts::assertion(block.size_bytes() >= size);
+        pican::contracts::assertion(pican::mem::address_is_aligned(ptr, alignment));
 
         return ptr;
     }

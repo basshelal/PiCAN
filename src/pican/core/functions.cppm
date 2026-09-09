@@ -12,7 +12,7 @@ module;
 export module pican.core:functions;
 
 import :types;
-import stacktrace;
+import pican.trace;
 
 export namespace pican {
 
@@ -35,12 +35,13 @@ exit_immediately() {
 }
 
 // TODO @basshelal Tue 03-Feb-2026 : Allow for fmt formatting here maybe?
+//  and allow for setting the panic handler (useful for testing!)
 [[noreturn]]
 inline void
 panic(const std::string_view& message) {
     ::write(STDERR_FILENO, message.data(), message.length());
     ::write(STDERR_FILENO, "\n", 1);
-    stacktrace::print_stacktrace(stderr);
+    pican::trace::print_stacktrace(stderr);
     pican::exit_immediately();
 }
 

@@ -6,13 +6,12 @@ module;
 #include <memory>
 #include <optional>
 
-#include "pican/contracts.hpp"
-
 export module pican.ds:RingBuffer;
 
 import :Array;
 import pican.core;
 import pican.mem;
+import pican.contracts;
 
 export namespace pican::ds {
 
@@ -103,7 +102,7 @@ public:  // getters
         if (writeIndex > readIndex) {  // no circling has happened yet
             return writeIndex - readIndex;
         }
-        CONTRACTS_ASSERT(readIndex > writeIndex);
+        pican::contracts::assertion(readIndex > writeIndex);
 
         // here, a circling has happened
         const Count diff = this->capacity() - readIndex;

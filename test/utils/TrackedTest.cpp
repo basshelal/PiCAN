@@ -10,31 +10,37 @@ using LifeTimeCallbacks = Tracked::LifetimeCallbacks;
 
 TEST_CASE("Tracked") {
     const std::string data{"element"};
-    bool called = false;
-
-    const LifeTimeCallback default_callback = [&called](const auto&) {
-        called = true;
+    int callbackCalledCount = 0;
+    const LifeTimeCallback defaultCallback = [&callbackCalledCount](const auto&) {
+        callbackCalledCount++;
     };
-    CHECK_FALSE(called);
+    CHECK(callbackCalledCount == 0);
+    int destructorCalledCount = 0;
+    const LifeTimeCallback onDestructed = [&destructorCalledCount](const auto&) {
+        destructorCalledCount++;
+    };
+    CHECK(destructorCalledCount == 0);
 
     SECTION("Parameterized constructor") {
-        const LifeTimeCallbacks callbacks{.onConstructor = default_callback};
+        const LifeTimeCallbacks callbacks{.onConstructed = defaultCallback, .onDestructed = onDestructed};
         const Tracked tracked{data, callbacks};
 
         CHECK(tracked.data == data);
         CHECK(tracked.lastOperation == LifetimeOperation::CONSTRUCTOR);
         CHECK(tracked.copyCount == 0);
         CHECK(tracked.moveCount == 0);
-        CHECK(called);
+        CHECK(callbackCalledCount == 1);
+        tracked.~Tracked();
+        CHECK(destructorCalledCount == 1);
     }
 
     SECTION("Copy constructor") {
-        const LifeTimeCallbacks callbacks{.onCopyConstructor = default_callback};
+        const LifeTimeCallbacks callbacks{.onCopyConstructed = defaultCallback};
         const Tracked original{"element", callbacks};
-        CHECK_FALSE(called);
+        CHECK(callbackCalledCount == 0);
         const Tracked copy{original};
 
-        CHECK(called);
+        CHECK(callbackCalledCount == 1);
         CHECK(copy.data == data);
         CHECK(copy.lastOperation == LifetimeOperation::COPY_CONSTRUCTOR);
         CHECK(copy.copyCount == 1);
@@ -47,13 +53,13 @@ TEST_CASE("Tracked") {
     }
 
     SECTION("Copy assignment") {
-        const LifeTimeCallbacks callbacks{.onCopyAssignment = default_callback};
+        const LifeTimeCallbacks callbacks{.onCopyAssigned = defaultCallback};
         const Tracked original{"element", callbacks};
         Tracked copy{};
-        CHECK_FALSE(called);
+        CHECK(callbackCalledCount == 0);
         copy = original;
 
-        CHECK(called);
+        CHECK(callbackCalledCount == 1);
         CHECK(copy.data == data);
         CHECK(copy.lastOperation == LifetimeOperation::COPY_ASSIGNMENT);
         CHECK(copy.copyCount == 1);
@@ -66,29 +72,34 @@ TEST_CASE("Tracked") {
     }
 
     SECTION("Move constructor") {
-        const LifeTimeCallbacks callbacks{.onMoveConstructor = default_callback};
+        const LifeTimeCallbacks callbacks{.onMoveConstructed = defaultCallback, .onDestructed = onDestructed};
         Tracked original{"element", callbacks};
-        CHECK_FALSE(called);
+        CHECK(callbackCalledCount == 0);
         const Tracked copy{std::move(original)};
 
-        CHECK(called);
+        CHECK(callbackCalledCount == 1);
         CHECK(copy.data == data);
         CHECK(copy.lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR);
         CHECK(copy.copyCount == 0);
         CHECK(copy.moveCount == 1);
+        copy.~Tracked();
+        CHECK(destructorCalledCount == 1);
     }
 
     SECTION("Move assignment") {
-        const LifeTimeCallbacks callbacks{.onMoveAssignment = default_callback};
+        const LifeTimeCallbacks callbacks{.onMoveAssigned = defaultCallback, .onDestructed = onDestructed};
         Tracked original{"element", callbacks};
         Tracked copy{};
-        CHECK_FALSE(called);
+        CHECK(callbackCalledCount == 0);
         copy = std::move(original);
 
-        CHECK(called);
+        CHECK(destructorCalledCount == 0);
+        CHECK(callbackCalledCount == 1);
         CHECK(copy.data == data);
         CHECK(copy.lastOperation == LifetimeOperation::MOVE_ASSIGNMENT);
         CHECK(copy.copyCount == 0);
         CHECK(copy.moveCount == 1);
+        copy.~Tracked();
+        CHECK(destructorCalledCount == 1);
     }
 }

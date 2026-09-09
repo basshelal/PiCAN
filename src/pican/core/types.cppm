@@ -5,9 +5,9 @@ module;
 #include <string_view>
 
 export module pican.core:types;
+import :StrongTypeDef;
 
 export namespace pican {
-
 // TODO @basshelal Fri 24-Jul-2026 : Convert (most? of) these to be "strong typedefs" aka, nice useful value classes
 using Address = uintptr_t;
 using SizeBytes = std::size_t;

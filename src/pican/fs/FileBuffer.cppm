@@ -2,11 +2,11 @@ module;
 
 #include <cstdint>
 #include <cstring>
-
-#include "pican/contracts.hpp"
+#include <algorithm>
 
 export module pican.fs:FileBuffer;
 
+import pican.contracts;
 import pican.core;
 import pican.mem;
 
@@ -20,7 +20,7 @@ private:  // fields
 
 public:  // constructors
     explicit FileBuffer(const mem::Block& block) : block_f{block}, writeIndex_f{0}, readIndex_f{0} {
-        CONTRACTS_PRECONDITION(!block.is_null());
+        pican::contracts::precondition(!block.is_null());
     }
 
 public:  // lifetime
@@ -39,7 +39,7 @@ public:  // lifetime
 public:  // member functions
     SizeBytes
     write_from(void* source, SizeBytes size) & {
-        CONTRACTS_PRECONDITION(source != nullptr);
+        pican::contracts::precondition(source != nullptr);
 
         SizeBytes bytesToWrite = std::min(this->writable_bytes(), size);
 
@@ -48,14 +48,14 @@ public:  // member functions
 
         this->writeIndex_f += bytesToWrite;
 
-        CONTRACTS_ASSERT(this->writeIndex_f <= this->capacity_bytes());
-        CONTRACTS_ASSERT(this->writeIndex_f >= this->readIndex_f);
+        pican::contracts::assertion(this->writeIndex_f <= this->capacity_bytes());
+        pican::contracts::assertion(this->writeIndex_f >= this->readIndex_f);
         return bytesToWrite;
     }
 
     SizeBytes
     read_into(void* destination, SizeBytes size) const& {
-        CONTRACTS_PRECONDITION(destination != nullptr);
+        pican::contracts::precondition(destination != nullptr);
 
         SizeBytes bytesToRead = std::min(this->readable_bytes(), size);
         if (bytesToRead == 0) {
@@ -67,8 +67,8 @@ public:  // member functions
 
         this->readIndex_f += bytesToRead;
 
-        CONTRACTS_ASSERT(this->readIndex_f <= this->capacity_bytes());
-        CONTRACTS_ASSERT(this->readIndex_f <= this->writeIndex_f);
+        pican::contracts::assertion(this->readIndex_f <= this->capacity_bytes());
+        pican::contracts::assertion(this->readIndex_f <= this->writeIndex_f);
         return bytesToRead;
     }
 
@@ -118,7 +118,7 @@ public:  // member functions
     increment_write_index_by(Index incrementBy) & {
         const Index actual = pican::clamp<Index>(0, incrementBy, static_cast<Index>(this->writable_bytes()));
         this->writeIndex_f += actual;
-        CONTRACTS_ASSERT(this->writeIndex_f <= this->capacity_bytes());
+        pican::contracts::assertion(this->writeIndex_f <= this->capacity_bytes());
         return this->writeIndex_f;
     }
 
@@ -126,7 +126,7 @@ public:  // member functions
     increment_read_index_by(Index incrementBy) & {
         const Index actual = pican::clamp<Index>(0, incrementBy, static_cast<Index>(this->readable_bytes()));
         this->readIndex_f += actual;
-        CONTRACTS_ASSERT(this->readIndex_f <= this->writeIndex_f);
+        pican::contracts::assertion(this->readIndex_f <= this->writeIndex_f);
         return this->readIndex_f;
     }
 

@@ -11,28 +11,23 @@ module;
 #include <backtrace.h>
 #include <unistd.h>
 
-export module stacktrace;
+export module pican.trace:Trace;
 
-// TODO @basshelal Wed 26-Aug-2026 : Make the libbacktrace dependency using no system libraries, use cpm + cmake
-//  entirely
-export namespace stacktrace {
+export namespace pican::trace {
 
 struct Entry {
-    static constexpr std::size_t SYMBOL_FUNCTION_LENGTH = 128;
-    static constexpr std::size_t FILE_LENGTH = 256;
     uintptr_t programCounter = 0;
     uintptr_t symbolAddress = 0;
     uintptr_t symbolSize = 0;
     uintptr_t symbolOffset = 0;
     int lineNumber = 0;
-    // TODO(bxh) 02-Sep-26 22:59 Consider converting to std::array??
-    char symbolName[SYMBOL_FUNCTION_LENGTH] = {};
-    char functionName[SYMBOL_FUNCTION_LENGTH] = {};
-    char filename[FILE_LENGTH] = {};
+    std::array<char, 128> symbolName = {};
+    std::array<char, 128> functionName = {};
+    std::array<char, 256> filename = {};
 };
 
-using EntryCallback = bool (*)(const stacktrace::Entry& entry, std::size_t index, void* userData);
-}  // namespace stacktrace
+using EntryCallback = bool (*)(const pican::trace::Entry& entry, std::size_t index, void* userData);
+}  // namespace pican::trace
 
 namespace {
 // Global state required by libbacktrace
@@ -85,8 +80,8 @@ error_callback(void* data, const char* msg, int errnum) {
 static_assert(std::is_same_v<decltype(&error_callback), ::backtrace_error_callback>);
 
 struct CallbackInfo {
-    stacktrace::Entry entry = {};
-    stacktrace::EntryCallback callback = {};
+    pican::trace::Entry entry = {};
+    pican::trace::EntryCallback callback = {};
     std::size_t index = 0;
     void* userData = nullptr;
 };
@@ -96,11 +91,11 @@ syminfo_callback(
     void* data, uintptr_t programCounter, const char* symbolName, uintptr_t symbolAddress, uintptr_t symbolSize
 ) {
     CallbackInfo* info = static_cast<CallbackInfo*>(data);
-    stacktrace::Entry& entry = info->entry;
+    pican::trace::Entry& entry = info->entry;
     entry.programCounter = programCounter;
     if (symbolName != nullptr) {
-        const std::size_t length = std::min(stacktrace::Entry::SYMBOL_FUNCTION_LENGTH, std::strlen(symbolName));
-        ::memcpy(entry.symbolName, symbolName, length);
+        const std::size_t length = std::min(entry.symbolName.size(), std::strlen(symbolName));
+        ::memcpy(entry.symbolName.data(), symbolName, length);
     }
     entry.symbolAddress = symbolAddress;
     entry.symbolSize = symbolSize;
@@ -116,21 +111,21 @@ static_assert(std::is_same_v<decltype(&syminfo_callback), ::backtrace_syminfo_ca
 int
 full_callback(void* data, uintptr_t programCounter, const char* filename, int lineNumber, const char* functionName) {
     CallbackInfo* info = static_cast<CallbackInfo*>(data);
-    info->entry = stacktrace::Entry{};
-    stacktrace::Entry& entry = info->entry;
-    stacktrace::EntryCallback callback = info->callback;
+    info->entry = pican::trace::Entry{};
+    pican::trace::Entry& entry = info->entry;
+    pican::trace::EntryCallback callback = info->callback;
     // These can and will be mangled but can still be quite readable
     // de-mangling at runtime using abi::__cxa_demangle will use the heap and thus is not a viable option for us
     // there is no simple way to get runtime de-mangling, therefore, we resort to keeping the mangled names,
     // use a tool like c++filt to de-mangle the names from the stacktrace
     if (functionName != nullptr) {
-        const std::size_t length = std::min(stacktrace::Entry::SYMBOL_FUNCTION_LENGTH, std::strlen(functionName));
-        ::memcpy(entry.functionName, functionName, length);
+        const std::size_t length = std::min(entry.functionName.size(), std::strlen(functionName));
+        ::memcpy(entry.functionName.data(), functionName, length);
     }
 
     if (filename != nullptr) {
-        const std::size_t length = std::min(stacktrace::Entry::FILE_LENGTH, std::strlen(filename));
-        ::memcpy(entry.filename, filename, length);
+        const std::size_t length = std::min(entry.filename.size(), std::strlen(filename));
+        ::memcpy(entry.filename.data(), filename, length);
     }
     entry.lineNumber = lineNumber;
 
@@ -138,11 +133,11 @@ full_callback(void* data, uintptr_t programCounter, const char* filename, int li
                                                             const char* symbolName, uintptr_t symbolAddress,
                                                             uintptr_t symbolSize) -> void {
         CallbackInfo* info = static_cast<CallbackInfo*>(data);
-        stacktrace::Entry& entry = info->entry;
+        pican::trace::Entry& entry = info->entry;
         entry.programCounter = programCounter;
         if (symbolName != nullptr) {
-            const std::size_t length = std::min(stacktrace::Entry::SYMBOL_FUNCTION_LENGTH, std::strlen(symbolName));
-            ::memcpy(entry.symbolName, symbolName, length);
+            const std::size_t length = std::min(entry.symbolName.size(), std::strlen(symbolName));
+            ::memcpy(entry.symbolName.data(), symbolName, length);
         }
         entry.symbolAddress = symbolAddress;
         entry.symbolSize = symbolSize;
@@ -166,7 +161,7 @@ static_assert(std::is_same_v<decltype(&full_callback), ::backtrace_full_callback
 
 }  // namespace
 
-export namespace stacktrace {
+export namespace pican::trace {
 
 void
 initialize(char** argv) {
@@ -206,7 +201,7 @@ get_current_entry() {
         return false;
     };
     Entry result{};
-    get_stacktrace(callback, &result, 1);
+    pican::trace::get_stacktrace(callback, &result, 1);
     return result;
 }
 
@@ -225,20 +220,20 @@ get_entries(Entry* entries, std::size_t entryCount, int skipFrames) {
         data->wrote++;
         return (index <= data->entryCount);
     };
-    stacktrace::get_stacktrace(callback, &data, skipFrames + 1);
+    pican::trace::get_stacktrace(callback, &data, skipFrames + 1);
     return data.wrote;
 }
 
 void
 print_entry(const Entry& entry, std::FILE* file) {
     const FdWriter writer{::fileno(file)};
-    writer.write_string(entry.filename);
+    writer.write_string(entry.filename.data());
     writer.write_string(":");
     writer.write_int(entry.lineNumber);
     writer.write_string(" @ ");
-    writer.write_string(entry.functionName);
+    writer.write_string(entry.functionName.data());
     writer.write_string(" ");
-    writer.write_string(entry.symbolName);
+    writer.write_string(entry.symbolName.data());
     writer.write_string(" @ ");
     writer.write_hex(entry.symbolAddress);
     writer.write_string(" + ");
@@ -252,9 +247,9 @@ void
 print_stacktrace(std::FILE* file = stderr, int skipFrames = 0) {
     EntryCallback callback = [](const Entry& entry, std::size_t index, void* userData) -> bool {
         std::FILE* file = static_cast<FILE*>(userData);
-        print_entry(entry, file);
+        pican::trace::print_entry(entry, file);
         return true;
     };
-    stacktrace::get_stacktrace(callback, file, skipFrames + 1);
+    pican::trace::get_stacktrace(callback, file, skipFrames + 1);
 }
-}  // namespace stacktrace
+}  // namespace pican::trace

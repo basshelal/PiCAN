@@ -7,8 +7,6 @@ module;
 #include <magic_enum/magic_enum.hpp>
 #include <unistd.h>
 
-#include "pican/contracts.hpp"
-
 export module pican:Application;
 
 import pican.core;

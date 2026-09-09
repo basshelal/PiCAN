@@ -13,5 +13,3 @@
 
 #define TODO_NOT_IMPLEMENTED() pican::todo("Not Implemented")
 
-#define SANITY_CHECK(condition) assert(condition)
-

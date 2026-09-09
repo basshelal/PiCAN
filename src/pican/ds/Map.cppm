@@ -4,13 +4,13 @@ module;
 #include <cstdint>
 #include <optional>
 
-#include "pican/contracts.hpp"
 #include "pican/macros.hpp"
 
 export module pican.ds:Map;
 
 import :ArrayList;
 import pican.mem;
+import pican.contracts;
 
 namespace pican::ds {
 enum class ElementStatus : std::uint8_t {
@@ -85,7 +85,7 @@ public:  // member functions
     put_copy(const Key_TP& key, const Value_TP& value) & {
         Index index = this->hashed_index(key);
         Element* element = this->elements_f.get_ptr(index);
-        CONTRACTS_ASSERT(element != nullptr);
+        pican::contracts::assertion(element != nullptr);
 
         // empty slot
         if (element->status == ElementStatus::EMPTY) {
@@ -95,7 +95,7 @@ public:  // member functions
             return;
         }
 
-        CONTRACTS_ASSERT(element->status == ElementStatus::OCCUPIED);
+        pican::contracts::assertion(element->status == ElementStatus::OCCUPIED);
         // already exists but key is same, update
         if (element->key == key) {
             element->value = value;
@@ -110,7 +110,7 @@ public:  // member functions
     get(const Key_TP& key) const& {
         Index index = this->hashed_index(key);
         Element* element = this->elements_f.get_ptr(index);
-        assert(element != nullptr);
+        pican::contracts::assertion(element != nullptr);
         if (element->status == ElementStatus::EMPTY) {
             return std::optional<Value_TP>{};
         }
@@ -122,7 +122,7 @@ public:  // member functions
     has_value(const Key_TP& key) const& {
         Index index = this->hashed_index(key);
         Element* element = this->elements_f.get_ptr(index);
-        assert(element != nullptr);
+        pican::contracts::assertion(element != nullptr);
         return element->status != ElementStatus::EMPTY;
     }
 
@@ -132,7 +132,7 @@ private:  // member functions
     hashed_index(const Key_TP& key) const& {
         Index hash = pican::hash(key);
         Index index = hash % this->capacity();
-        assert(index >= 0 && index < this->capacity());
+        pican::contracts::assertion(index >= 0 && index < this->capacity());
         return index;
     }
 };

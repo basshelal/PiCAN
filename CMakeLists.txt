@@ -26,23 +26,23 @@ else ()
     message("Not using mold linker")
 endif ()
 
-find_program(CCACHE_PROGRAM NAMES ccache)
-if (CCACHE_PROGRAM)
-    set(CCACHE_DEFAULT_STATUS ON)
-else ()
-    set(CCACHE_DEFAULT_STATUS OFF)
-    message(WARNING "ccache not found, defaulting USE_CCACHE to OFF")
-endif ()
-
-option(USE_CCACHE "Use ccache compiler cacher (if available)" ${CCACHE_DEFAULT_STATUS})
-
-if (USE_CCACHE)
-    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
-    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
-    message("Using ccache compiler cacher")
-else ()
-    message("Not using ccache compiler cacher")
-endif ()
+#find_program(CCACHE_PROGRAM NAMES ccache)
+#if (CCACHE_PROGRAM)
+#    set(CCACHE_DEFAULT_STATUS ON)
+#else ()
+#    set(CCACHE_DEFAULT_STATUS OFF)
+#    message(WARNING "ccache not found, defaulting USE_CCACHE to OFF")
+#endif ()
+#
+#option(USE_CCACHE "Use ccache compiler cacher (if available)" ${CCACHE_DEFAULT_STATUS})
+#
+#if (USE_CCACHE)
+#    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+#    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+#    message("Using ccache compiler cacher")
+#else ()
+#    message("Not using ccache compiler cacher")
+#endif ()
 
 add_compile_options(-fno-exceptions -fno-unwind-tables -fno-rtti)
 add_compile_options(-Wall -Werror -pedantic -Wno-interference-size -Wno-attributes=pican::)
@@ -81,6 +81,7 @@ add_subdirectory(src)
 enable_testing()
 add_subdirectory(test)
 
+# TODO clean this up! I don't want extra CMake targets, instead defer this to scripts
 find_program(CLANG_FORMAT_EXE NAMES "clang-format")
 if (CLANG_FORMAT_EXE)
     # A. The "Check" Target (For CI/Audits) - Fails if code is messy

@@ -4,8 +4,6 @@ module;
 #include <cstdint>
 #include <optional>
 
-#include "pican/contracts.hpp"
-
 export module pican.log:LoggerThread;
 
 import fmt;

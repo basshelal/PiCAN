@@ -8,8 +8,6 @@ module;
 
 #include <unistd.h>
 
-#include "pican/contracts.hpp"
-
 export module pican.info:InfoThread;
 
 import pican.core;

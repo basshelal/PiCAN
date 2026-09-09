@@ -10,8 +10,6 @@ module;
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "pican/contracts.hpp"
-
 export module pican.info:MemoryReader;
 
 import pican.core;

@@ -4,16 +4,24 @@
 
 ## Doing
 
+* I think we need to restructure our modules and namespaces, contracts, and maybe heap and trace don't need to be in 
+  pican! At least not in the namespace for sure (no benefit in having them separate CMake libs)
+* Ensure Result is ready to use, use contracts in it and try to test it as much as possible
+* Set panic handler and allow panic to take a fmt formattable string!
+* Start re-designing and testing memory stuff first!
+* Make CMake custom targets just use scripts we will write and consider removing the custom targets
+* Look into getting the mlockall issue solved so that we can run tests from the terminal no problem
 * Need a venv for semgrep and start adding some more rules with Gemini's help
 * Make libbacktrace a CMake/cpm dependency using Gemini's help so that it doesn't need to be installed on the system
-* make contracts its own library thing so that it can be used in heap and stacktrace???
 * Comment out all code so that we can have tests running for absolute basic units and modules, tests are black-box only!
-  * heap and stacktrace
   * core
   * mem
   * ds
   * fs
   * ...
+
+* Catch2 needs the heap to be unsealed to write the strings when a test fails
+* It also needs exceptions to be available in order to not end with a SIGABRT after the first failed test
 
 * IMPORTANT! FIX all in place data holders (like Result and RingBuffer and Array) to ensure
   that copy assignment operators don't happen on uninitialized garbage data, use placement new and remember 
@@ -38,7 +46,6 @@
 
 ## Will Do
 
-* Switch to Catch2
 * Consider a CI system or something like that maybe?
 * Pre-allocate and start all Threads, should have 1 UI thread, 1 CAN Thread (reading, processing etc.),
   1 or 2 IO Threads for 4G and disk writing/logging

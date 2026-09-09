@@ -1,3 +1,3 @@
 export module pican;
 
-export import :Application;
+// export import :Application;
