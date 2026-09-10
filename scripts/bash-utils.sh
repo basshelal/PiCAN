@@ -20,6 +20,11 @@ export SRC_DIR=$(realpath "$PROJECT_DIR/src")
 # The test dir in the project root
 export TEST_DIR=$(realpath "$PROJECT_DIR/test")
 
+if [[ ! -d "$PROJECT_DIR/build" ]]; then
+    mkdir -p "$PROJECT_DIR/build/debug"
+    mkdir -p "$PROJECT_DIR/build/release"
+fi
+
 # The build dir in the project root
 export BUILD_DIR=$(realpath "$PROJECT_DIR/build")
 

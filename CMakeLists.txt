@@ -98,6 +98,8 @@ if (libbacktrace_ADDED)
 
     # Ensure CMake knows this library doesn't exist until the ExternalProject finishes
     add_dependencies(libbacktrace libbacktrace_ext)
+    
+    file(MAKE_DIRECTORY ${BACKTRACE_INSTALL_DIR}/include)
 
     # Expose the include directories and the static archive to your project
     set_target_properties(libbacktrace PROPERTIES
