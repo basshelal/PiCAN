@@ -69,7 +69,7 @@ if (libbacktrace_ADDED)
     set(BACKTRACE_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/libbacktrace-install")
     set(BACKTRACE_STATIC_LIB "${BACKTRACE_INSTALL_DIR}/lib/libbacktrace.a")
 
-    # 2. Tell CMake how to run ./configure and make
+    # Tell CMake how to run ./configure and make
     ExternalProject_Add(libbacktrace_ext
             SOURCE_DIR ${libbacktrace_SOURCE_DIR}
             PREFIX "${CMAKE_CURRENT_BINARY_DIR}/libbacktrace-ext"
@@ -93,12 +93,13 @@ if (libbacktrace_ADDED)
             BUILD_BYPRODUCTS ${BACKTRACE_STATIC_LIB}
     )
 
-    # 3. Create a modern CMake target that aliases the raw Autotools output
+    # Create a modern CMake target that aliases the raw Autotools output
     add_library(libbacktrace STATIC IMPORTED GLOBAL)
 
     # Ensure CMake knows this library doesn't exist until the ExternalProject finishes
     add_dependencies(libbacktrace libbacktrace_ext)
-    
+
+    # Small fix so that configure step doesn't panic that the directory doesn't exist
     file(MAKE_DIRECTORY ${BACKTRACE_INSTALL_DIR}/include)
 
     # Expose the include directories and the static archive to your project
@@ -107,11 +108,6 @@ if (libbacktrace_ADDED)
             INTERFACE_INCLUDE_DIRECTORIES ${BACKTRACE_INSTALL_DIR}/include
     )
 endif ()
-
-
-# libbacktrace
-#find_path(LIBBACKTRACE_INCLUDE_DIR backtrace.h)
-#find_library(LIBBACKTRACE_LIB backtrace)
 
 add_subdirectory(src)
 

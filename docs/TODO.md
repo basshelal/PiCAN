@@ -4,6 +4,8 @@
 
 ## Doing
 
+* Guide for installing uv and getting the project ready to use, script(s) to do all checks
+* Use CMake presets and workflows to completely replace most (or even all) of the scripts
 * I think we need to restructure our modules and namespaces, contracts, and maybe heap and trace don't need to be in 
   pican! At least not in the namespace for sure (no benefit in having them separate CMake libs)
 * Ensure Result is ready to use, use contracts in it and try to test it as much as possible
@@ -63,3 +65,4 @@
 * Yocto docker, qemu stuff which then needs better scripts and CMake targets and presets and builds
 * Pi needs a watchdog to watch that PiCAN is running and if not logs and sends this to the network and re-starts it
 * Consider OTA update technology, but not important for now
+* Ensure that the release build still builds with debug info (no strip) otherwise stacktraces will be useless

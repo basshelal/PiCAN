@@ -7,15 +7,13 @@ Work in progress
 `cmake` (and a generator like `ninja` preferred or `make`)
 `gcc`
 `mold` linker optionally for better link times
-`clang-format`
-`clang-tidy`
-`semgrep`
+`uv` to manage installation of all tools (`clang-format`, `clang-tidy`, `semgrep`)
 `socketcan` ?
 `bash` for scripts
 
 ## Dependencies
 
-All managed using `cpm` except `libbacktrace`
+All managed using `cpm`
 
 ## Unlocking Memory Limits
 

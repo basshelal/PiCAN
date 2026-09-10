@@ -15,6 +15,16 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
+    },
+    {
+      "name": "release-config",
+      "displayName": "release configure preset",
+      "binaryDir": "${sourceDir}/build/release",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -33,6 +43,22 @@
         "pican-test"
       ],
       "configurePreset": "debug-config"
+    },
+    {
+      "name": "release-app",
+      "displayName": "release app (no tests)",
+      "targets": [
+        "pican-app"
+      ],
+      "configurePreset": "release-config"
+    },
+    {
+      "name": "release-test",
+      "displayName": "release tests",
+      "targets": [
+        "pican-test"
+      ],
+      "configurePreset": "release-config"
     }
   ],
   "workflowPresets": [
