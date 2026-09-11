@@ -2,7 +2,7 @@ module;
 #include <utility>
 export module pican.core:StrongTypeDef;
 
-export namespace pican::core {
+export namespace pican {
 template<typename TP, typename Tag_TP>
 class StrongTypeDef {
 private:
@@ -11,10 +11,10 @@ private:
 public:  // constructors
     StrongTypeDef() = default;
 
-    explicit StrongTypeDef(const TP& value) : value_f{value} {
+    explicit constexpr StrongTypeDef(const TP& value) : value_f{value} {
     }
 
-    explicit StrongTypeDef(TP&& value) : value_f{std::move(value)} {
+    explicit constexpr StrongTypeDef(TP&& value) : value_f{std::move(value)} {
     }
 
 public:  // copy-control
@@ -43,6 +43,9 @@ public:  // getters
         return this->value_f;
     }
 
+    /**
+     * Force all conversions to be explicit
+     */
     [[nodiscard]]
     explicit
     operator TP() const {
@@ -53,4 +56,4 @@ public:  // getters
     bool
     operator<=>(const StrongTypeDef&) const = default;
 };
-}  // namespace pican::core
+}  // namespace pican

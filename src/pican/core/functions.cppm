@@ -35,7 +35,7 @@ exit_immediately() {
 }
 
 // TODO @basshelal Tue 03-Feb-2026 : Allow for fmt formatting here maybe?
-//  and allow for setting the panic handler (useful for testing!)
+//  and allow for setting the panic handler (useful for testing!), copy all of this from log module
 [[noreturn]]
 inline void
 panic(const std::string_view& message) {
