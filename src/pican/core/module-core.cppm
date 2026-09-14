@@ -10,4 +10,4 @@ export import :CopyableAtomic;
 export import :Thread;
 export import :IApplicationThread;
 export import :ScopeGuard;
-export import :StrongTypeDef;
+export import :TypeDef;

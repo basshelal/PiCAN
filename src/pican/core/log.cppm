@@ -3,6 +3,7 @@ module;
 #include <atomic>
 #include <cstdint>
 #include <string_view>
+#include <utility>
 
 #include <unistd.h>
 

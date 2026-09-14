@@ -1,5 +1,6 @@
 module;
 
+#include <array>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -12,7 +13,8 @@ module;
 export module pican.core:functions;
 
 import :types;
-import pican.trace;
+import stacktrace;
+import fmt;
 
 export namespace pican {
 
@@ -34,15 +36,23 @@ exit_immediately() {
     std::_Exit(1);
 }
 
-// TODO @basshelal Tue 03-Feb-2026 : Allow for fmt formatting here maybe?
-//  and allow for setting the panic handler (useful for testing!), copy all of this from log module
 [[noreturn]]
 inline void
-panic(const std::string_view& message) {
-    ::write(STDERR_FILENO, message.data(), message.length());
+vpanic(fmt::string_view format, fmt::format_args args) {
+    std::array<char, 1'024> messageBuffer = {};
+    const fmt::format_to_n_result<char*> formattedMessage =
+        fmt::vformat_to_n(messageBuffer.data(), messageBuffer.size() - 1, format, args);
+    ::write(STDERR_FILENO, messageBuffer.data(), formattedMessage.size);
     ::write(STDERR_FILENO, "\n", 1);
-    pican::trace::print_stacktrace(stderr);
+    stacktrace::print_stacktrace(stderr);
     pican::exit_immediately();
+}
+
+template<typename... Args_TP>
+[[noreturn]]
+inline void
+panic(fmt::format_string<Args_TP...> format, Args_TP&&... args) {
+    vpanic(format.get(), fmt::make_format_args(args...));
 }
 
 [[noreturn]]
@@ -61,10 +71,11 @@ get_current_millis() {
     return sinceEpoch.count();
 }
 
+template<typename... Args_TP>
 [[noreturn]]
 inline void
-todo(const std::string_view& message) {
-    pican::panic(message);
+todo(fmt::format_string<Args_TP...> format, Args_TP&&... args) {
+    vpanic(format.get(), fmt::make_format_args(args...));
 }
 
 template<typename TP, typename... Args>

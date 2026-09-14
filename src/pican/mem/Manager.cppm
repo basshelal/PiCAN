@@ -6,7 +6,7 @@ module;
 
 export module pican.mem:Manager;
 
-import pican.contracts;
+import contracts;
 import pican.core;
 // import pican.ds;
 import :Arena;
@@ -70,7 +70,7 @@ public:  // static functions
             pican::panic("Could not initialize memory manager, mlockall failed!");
         }
 
-        pican::contracts::assertion(toAllocate > sizeof(Manager));
+        contracts::assertion(toAllocate > sizeof(Manager));
 
         This::instance_sf =
             new (static_cast<Manager*>(memory)) Manager{mem::ptr_to_address(memory), toAllocate, sizeof(Manager)};
@@ -98,7 +98,7 @@ public:  // member functions
         }
 
         const Address address = headAddress + paddingRequired;
-        pican::contracts::assertion(pican::mem::address_is_aligned(address, alignment));
+        contracts::assertion(pican::mem::address_is_aligned(address, alignment));
         instance.headOffset_f = newHeadOffset;
 
         return Block{address, size};

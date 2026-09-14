@@ -1,6 +1,6 @@
 export module pican.core:ScopeGuard;
 
-export namespace pican::core {
+export namespace pican {
 
 template<typename Callable_TP>
 class ScopeGuard {
@@ -30,4 +30,4 @@ public:  // Lifetime
     operator=(ScopeGuard&& rhs) noexcept = default;
 };
 
-}  // namespace pican::core
+}  // namespace pican

@@ -13,11 +13,11 @@ module;
 #define CONTRACTS_ENABLED 1
 #endif
 
-export module pican.contracts:Contracts;
+export module contracts:Contracts;
 
-import pican.trace;
+import stacktrace;
 
-export namespace pican::contracts {
+export namespace contracts {
 enum class ContractsLevel : std::uint8_t {
     NONE = 0,
     ALL = 1,
@@ -25,22 +25,24 @@ enum class ContractsLevel : std::uint8_t {
 
 namespace _ {
 void
-_contract_violation_at_compile_time();
+_contract_violation_at_compile_time() {
+    // No body because only called from a constexpr compile time so will always fail
 }
-}  // namespace pican::contracts
+}  // namespace _
+}  // namespace contracts
 
 namespace {
-constexpr pican::contracts::ContractsLevel level =
-    (CONTRACTS_ENABLED != 0) ? pican::contracts::ContractsLevel::ALL : pican::contracts::ContractsLevel::NONE;
+constexpr contracts::ContractsLevel level =
+    (CONTRACTS_ENABLED != 0) ? contracts::ContractsLevel::ALL : contracts::ContractsLevel::NONE;
 
 }  // namespace
 
-export namespace pican::contracts {
+export namespace contracts {
 using ViolationHandler = void (*)(std::string_view msg);
 
 inline void
 default_violation_handler(std::string_view msg) {
-    pican::trace::print_stacktrace(stderr, 2);
+    stacktrace::print_stacktrace(stderr, 2);
     if (!msg.empty()) {
         std::fprintf(stderr, "Contract violation: %.*s\n", static_cast<int>(msg.size()), msg.data());
     } else {
@@ -58,7 +60,7 @@ set_violation_handler(ViolationHandler handler) {
 
 constexpr void
 report_violation(std::string_view msg) {
-    if (std::is_constant_evaluated()) {
+    if consteval {
         _::_contract_violation_at_compile_time();
     } else {
         if (current_violation_handler) {
@@ -119,8 +121,9 @@ postcondition(Callable func) {
 template<typename T>
 class InvariantChecker {
     static_assert(
-        requires(const T& t) { {t.invariants()}->std::same_as<void>; },
-        "Class must define a public `void invariants() const` method to use class invariants"
+        requires(const T& t) {
+            { t.invariants() } -> std::same_as<void>;
+        }, "Class must define a public `void invariants() const` method to use class invariants"
     );
 
     const T* obj_f;
@@ -186,4 +189,4 @@ loop_invariant(Callable func) {
     return LoopInvariantChecker<Callable>(std::move(func));
 }
 
-}  // namespace pican::contracts
+}  // namespace contracts

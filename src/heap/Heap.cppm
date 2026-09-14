@@ -10,9 +10,9 @@ module;
 
 #include <unistd.h>
 
-export module pican.heap:Heap;
+export module heap:Heap;
 
-import pican.trace;
+import stacktrace;
 
 /**
  * Simple means of having a locked heap by overloading and overwriting all allocating functions, this works by
@@ -27,31 +27,32 @@ import pican.trace;
  * All of the operator new use this malloc but we overload them (and delete) anyway for safety and completeness and to
  * allow us customize their behavior further should the need arise
  */
-export namespace pican::heap {
+export namespace heap {
 using ViolationCallback = void (*)(std::size_t sizeBytes, void* userData);
-}  // namespace pican::heap
+}  // namespace heap
 
 namespace {
-
-struct CallbackData {
-    pican::heap::ViolationCallback callback;
-    void* userData;
-};
 
 void
 default_violation_callback([[maybe_unused]] std::size_t sizeBytes, [[maybe_unused]] void* userData) {
     std::string_view message{"Illegal allocation!\nHeap has been sealed, stacktrace:\n"};
     ::write(STDERR_FILENO, message.data(), message.length());
-    pican::trace::print_stacktrace(stderr, 1);
+    stacktrace::print_stacktrace(stderr, 1);
 
     _exit(1);  // exit immediately
 }
 
 alignas(std::hardware_destructive_interference_size) std::atomic<bool> heapSealed_g{false};
 alignas(std::hardware_destructive_interference_size) std::atomic<std::size_t> allocationsCount_g{0};
-alignas(std::hardware_destructive_interference_size) std::atomic<CallbackData> violationCallback_g{
-    CallbackData{.callback = &default_violation_callback, .userData = nullptr}
+alignas(std::hardware_destructive_interference_size) std::atomic<heap::ViolationCallback> violationCallback_g{
+    &default_violation_callback
 };
+alignas(std::hardware_destructive_interference_size) std::atomic<void*> violationCallbackData_g{nullptr};
+
+static_assert(decltype(heapSealed_g)::is_always_lock_free);
+static_assert(decltype(allocationsCount_g)::is_always_lock_free);
+static_assert(decltype(violationCallback_g)::is_always_lock_free);
+static_assert(decltype(violationCallbackData_g)::is_always_lock_free);
 
 [[maybe_unused]]
 void*
@@ -59,7 +60,7 @@ check_ptr_alloc(void* const ptr) {
     if (ptr == nullptr) {
         std::string_view message{"Failed to allocate!\n stacktrace:\n\n"};
         ::write(STDERR_FILENO, message.data(), message.length());
-        pican::trace::print_stacktrace(stderr, 1);
+        stacktrace::print_stacktrace(stderr, 1);
 
         _exit(1);  // exit immediately
     }
@@ -69,9 +70,10 @@ check_ptr_alloc(void* const ptr) {
 bool
 check_heap_is_not_sealed(std::size_t sizeBytes) {
     if (heapSealed_g.load(std::memory_order::seq_cst)) {
-        const CallbackData callbackData = violationCallback_g.load(std::memory_order::seq_cst);
-        if (callbackData.callback != nullptr) {
-            callbackData.callback(sizeBytes, callbackData.userData);
+        const heap::ViolationCallback callback = violationCallback_g.load(std::memory_order::seq_cst);
+        if (callback != nullptr) {
+            void* callbackData = violationCallbackData_g.load(std::memory_order::seq_cst);
+            callback(sizeBytes, callbackData);
         }
         return false;
     }
@@ -242,8 +244,8 @@ operator delete[](void* ptr, std::align_val_t align, const std::nothrow_t& tag) 
 }
 }
 
-export namespace pican::heap {
-const pican::heap::ViolationCallback DEFAULT_ILLEGAL_HEAP_USAGE_CALLBACK = default_violation_callback;
+export namespace heap {
+const heap::ViolationCallback DEFAULT_ILLEGAL_HEAP_USAGE_CALLBACK = default_violation_callback;
 
 void
 seal_heap() {
@@ -268,21 +270,14 @@ allocations_count() {
 }
 
 void
-set_violation_callback(pican::heap::ViolationCallback callback, void* userData) {
-    CallbackData callbackData{};
-    if (callback == nullptr) {
-        callbackData.callback = &default_violation_callback;
-        callbackData.userData = nullptr;
-    } else {
-        callbackData.callback = callback;
-        callbackData.userData = userData;
-    }
-    violationCallback_g.store(callbackData, std::memory_order::seq_cst);
+set_violation_callback(heap::ViolationCallback callback, void* userData) {
+    violationCallback_g.store(callback, std::memory_order::seq_cst);
+    violationCallbackData_g.store(userData, std::memory_order::seq_cst);
 }
 
 void
 reset_violation_callback() {
-    pican::heap::set_violation_callback(nullptr, nullptr);
+    heap::set_violation_callback(&default_violation_callback, nullptr);
 }
 
-}  // namespace pican::heap
+}  // namespace heap

@@ -68,7 +68,7 @@
 //     bool isEnabled = false;
 //     CONTRACTS_CREATE_CODE_BLOCK({ isEnabled = true; });
 //     ASSERT_TRUE(isEnabled);
-//     pican::contracts::violationHandler_g = [](const char*) -> void {
+//     contracts::violationHandler_g = [](const char*) -> void {
 //         ++contractViolated_s;
 //     };
 // }
@@ -184,5 +184,5 @@
 // }
 //
 // TEST(teardown) {
-//     pican::contracts::violationHandler_g = pican::contracts::defaultViolationHandler_g;
+//     contracts::violationHandler_g = contracts::defaultViolationHandler_g;
 // }

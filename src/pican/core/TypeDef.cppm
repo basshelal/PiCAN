@@ -1,34 +1,36 @@
 module;
+
 #include <utility>
-export module pican.core:StrongTypeDef;
+
+export module pican.core:TypeDef;
 
 export namespace pican {
 template<typename TP, typename Tag_TP>
-class StrongTypeDef {
+class TypeDef {
 private:
     TP value_f;
 
 public:  // constructors
-    StrongTypeDef() = default;
+    TypeDef() = default;
 
-    explicit constexpr StrongTypeDef(const TP& value) : value_f{value} {
+    explicit constexpr TypeDef(const TP& value) : value_f{value} {
     }
 
-    explicit constexpr StrongTypeDef(TP&& value) : value_f{std::move(value)} {
+    explicit constexpr TypeDef(TP&& value) : value_f{std::move(value)} {
     }
 
 public:  // copy-control
-    StrongTypeDef(const StrongTypeDef& rhs) = default;
+    TypeDef(const TypeDef& rhs) = default;
 
-    StrongTypeDef(StrongTypeDef&& rhs) = default;
+    TypeDef(TypeDef&& rhs) = default;
 
-    StrongTypeDef&
-    operator=(const StrongTypeDef& rhs) = default;
+    TypeDef&
+    operator=(const TypeDef& rhs) = default;
 
-    StrongTypeDef&
-    operator=(StrongTypeDef&& rhs) = default;
+    TypeDef&
+    operator=(TypeDef&& rhs) = default;
 
-    ~StrongTypeDef() = default;
+    ~TypeDef() = default;
 
 public:  // getters
     [[nodiscard]]
@@ -54,6 +56,6 @@ public:  // getters
 
     [[nodiscard]]
     bool
-    operator<=>(const StrongTypeDef&) const = default;
+    operator<=>(const TypeDef&) const = default;
 };
 }  // namespace pican

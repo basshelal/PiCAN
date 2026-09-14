@@ -5,7 +5,7 @@ module;
 #include <string_view>
 
 export module pican.core:types;
-import :StrongTypeDef;
+import :TypeDef;
 
 export namespace pican {
 // TODO @basshelal Fri 24-Jul-2026 : Convert (most? of) these to be "strong typedefs" aka, nice useful value classes

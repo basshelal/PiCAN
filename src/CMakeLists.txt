@@ -1,3 +1,6 @@
+add_subdirectory(stacktrace)
+add_subdirectory(heap)
+add_subdirectory(contracts)
 add_subdirectory(pican)
 
 set(MAIN_EXECUTABLE "pican-app")

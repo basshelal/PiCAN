@@ -3,8 +3,8 @@
 #include <catch2/catch_session.hpp>
 
 import pican.mem;
-import pican.heap;
-import pican.trace;
+import heap;
+import stacktrace;
 
 namespace {
 void
@@ -17,8 +17,8 @@ initialize_memory_manager() {
 
 int
 main(int argc, char** argv) {
-    pican::trace::initialize(argv);
-    pican::heap::unseal_heap();
+    stacktrace::initialize(argv);
+    heap::unseal_heap();
     initialize_memory_manager();
 
     Catch::Session testSession{};

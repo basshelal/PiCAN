@@ -6,7 +6,7 @@ module;
 
 export module pican.mem:utils;
 
-import pican.trace;
+import stacktrace;
 import pican.core;
 
 export namespace pican::mem {
@@ -48,7 +48,7 @@ address_is_aligned(Address address, Alignment alignment) {
 [[noreturn]]
 inline void
 panic_out_of_memory() {
-    pican::trace::print_stacktrace(stderr);
+    stacktrace::print_stacktrace(stderr);
     pican::exit_immediately();
 }
 

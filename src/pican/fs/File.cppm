@@ -13,7 +13,7 @@ module;
 
 export module pican.fs:File;
 
-import pican.contracts;
+import contracts;
 import pican.core;
 import :FileBuffer;
 
@@ -119,7 +119,7 @@ public:  // lifetime
 public:  // member functions
     SimpleResult
     set_read_buffer(const mem::Block& block) & {
-        pican::contracts::precondition(!block.is_null());
+        contracts::precondition(!block.is_null());
         if (this->isOpen_f) {
             return File::SimpleResult::failure_by_copy(File::Error::FILE_OPEN);
         }
@@ -133,7 +133,7 @@ public:  // member functions
             return File::SimpleResult::failure_by_copy(File::Error::FILE_OPEN);
         }
         this->readBuffer_f.reset();
-        pican::contracts::assertion(!this->has_read_buffer());
+        contracts::assertion(!this->has_read_buffer());
         return File::SimpleResult::success_default();
     }
 
@@ -145,12 +145,12 @@ public:  // member functions
 
     SimpleResult
     set_write_buffer(const mem::Block& block) & {
-        pican::contracts::precondition(!block.is_null());
+        contracts::precondition(!block.is_null());
         if (this->isOpen_f) {
             return File::SimpleResult::failure_by_copy(File::Error::FILE_OPEN);
         }
         this->writBuffer_f.emplace(block);
-        pican::contracts::assertion(this->has_write_buffer());
+        contracts::assertion(this->has_write_buffer());
         return File::SimpleResult::success_default();
     }
 
@@ -160,7 +160,7 @@ public:  // member functions
             return File::SimpleResult::failure_by_copy(File::Error::FILE_OPEN);
         }
         this->writBuffer_f.reset();
-        pican::contracts::assertion(!this->has_write_buffer());
+        contracts::assertion(!this->has_write_buffer());
         return File::SimpleResult::success_default();
     }
 
@@ -211,7 +211,7 @@ public:  // member functions
                 }
             }
         }
-        pican::contracts::assertion(fd != NULL_FILE_DESCRIPTOR);
+        contracts::assertion(fd != NULL_FILE_DESCRIPTOR);
         this->descriptor_f = fd;
         this->isOpen_f = true;
         this->mode_f = mode;
@@ -287,7 +287,7 @@ public:  // member functions
         if (!this->has_write_buffer()) {
             return this->unbuffered_write_from(source, size);
         }
-        pican::contracts::assertion(this->has_write_buffer());
+        contracts::assertion(this->has_write_buffer());
 
         FileBuffer& writeBuffer = this->writBuffer_f.value();
         char* srcPtr = static_cast<char*>(source);
@@ -350,7 +350,7 @@ public:  // member functions
         if (!this->has_read_buffer()) {
             return this->unbuffered_read_into(destination, size);
         }
-        pican::contracts::assertion(this->has_read_buffer());
+        contracts::assertion(this->has_read_buffer());
 
         FileBuffer& readBuffer = this->readBuffer_f.value();
 
@@ -391,7 +391,7 @@ public:  // member functions
             this->actual_seek(this->latest_read_offset());
             this->readBuffer_f.value().clear();
         }
-        pican::contracts::assertion(this->lastReadOffset_f == this->latest_read_offset());
+        contracts::assertion(this->lastReadOffset_f == this->latest_read_offset());
 
         const Result<SizeBytes, File::Error> readResult = this->actual_read_into(destination, size);
         if (readResult.is_failure()) {

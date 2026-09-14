@@ -2,8 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
-import pican.trace;
-import pican.heap;
+import stacktrace;
+import heap;
 import fmt;
 
 TEST_CASE("Stacktrace") {

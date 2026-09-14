@@ -5,7 +5,7 @@ module;
 
 export module pican.mem:Arena;
 
-import pican.contracts;
+import contracts;
 import pican.core;
 import :Block;
 
@@ -73,8 +73,8 @@ public:  // member functions
         if (ptr == pican::mem::ptr_to_address(nullptr)) {
             return nullptr;
         }
-        pican::contracts::assertion(block.size_bytes() >= size);
-        pican::contracts::assertion(pican::mem::address_is_aligned(ptr, alignment));
+        contracts::assertion(block.size_bytes() >= size);
+        contracts::assertion(pican::mem::address_is_aligned(ptr, alignment));
 
         return ptr;
     }

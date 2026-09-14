@@ -9,9 +9,11 @@ target_sources(PICAN_LIB
 )
 
 target_link_libraries(PICAN_LIB PUBLIC
+        stacktrace
+        heap
+        contracts
         fmt::fmt-module
         magic_enum::magic_enum
-        libbacktrace
 )
 
 target_include_directories(PICAN_LIB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)

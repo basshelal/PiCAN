@@ -6,7 +6,7 @@ import pican.test_utils;
 import pican.core;
 
 using pican::Result;
-using pican::core::ScopeGuard;
+using pican::ScopeGuard;
 using pican::test_utils::LifetimeOperation;
 using pican::test_utils::Tracked;
 using SuccessType = Tracked<std::string>;
