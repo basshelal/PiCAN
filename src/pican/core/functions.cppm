@@ -42,8 +42,10 @@ vpanic(fmt::string_view format, fmt::format_args args) {
     std::array<char, 1'024> messageBuffer = {};
     const fmt::format_to_n_result<char*> formattedMessage =
         fmt::vformat_to_n(messageBuffer.data(), messageBuffer.size() - 1, format, args);
-    ::write(STDERR_FILENO, messageBuffer.data(), formattedMessage.size);
-    ::write(STDERR_FILENO, "\n", 1);
+
+    [[maybe_unused]]
+    ssize_t _ = ::write(STDERR_FILENO, messageBuffer.data(), formattedMessage.size);
+    _ = ::write(STDERR_FILENO, "\n", 1);
     stacktrace::print_stacktrace(stderr);
     pican::exit_immediately();
 }

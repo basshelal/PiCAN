@@ -683,7 +683,7 @@ wheels = [
 [[package]]
 name = "pican"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "clang-format" },
     { name = "clang-tidy" },

@@ -16,7 +16,7 @@ set_target_properties(${TEST_EXECUTABLE} PROPERTIES
 )
 
 target_link_libraries(${TEST_EXECUTABLE} PRIVATE
-        PICAN_LIB
+        pican
         Catch2::Catch2
 )
 
@@ -28,6 +28,7 @@ include(CTest)
 include(Catch)
 catch_discover_tests(${TEST_EXECUTABLE})
 
+# TODO remove the -Wno below
 target_compile_options(${TEST_EXECUTABLE} PRIVATE "-Wno-comment")
 
 target_link_options(${TEST_EXECUTABLE} PRIVATE

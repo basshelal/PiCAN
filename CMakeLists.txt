@@ -179,7 +179,7 @@ if (SEMGREP_EXE)
             VERBATIM
     )
 else ()
-    message(FATAL_ERROR "semgrep not found!")
+    message(WARNING "semgrep not found!")
 endif ()
 
 # Make git use .githooks/ as its git hooks directory, this way,

@@ -73,7 +73,8 @@ default_log_function(LogLevel level, fmt::string_view format, fmt::format_args a
         fd = STDERR_FILENO;
     }
 
-    ::write(fd, fullBuffer.data(), fullDataToWrite.size);
+    [[maybe_unused]]
+    ssize_t _ = ::write(fd, fullBuffer.data(), fullDataToWrite.size);
 }
 
 static_assert(std::is_same_v<decltype(&default_log_function), LogFunctionPtr>);
@@ -89,9 +90,9 @@ export namespace pican {
 void
 set_log_function(const LogFunctionPtr& logFunction) {
     if (logFunction == nullptr) {
-        logFunction_g.store(&default_log_function, std::memory_order_consume);
+        logFunction_g.store(&default_log_function, std::memory_order_release);
     } else {
-        logFunction_g.store(logFunction, std::memory_order_consume);
+        logFunction_g.store(logFunction, std::memory_order_release);
     }
 }
 

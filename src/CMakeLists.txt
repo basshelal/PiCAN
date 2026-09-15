@@ -8,7 +8,7 @@ set(MAIN_EXECUTABLE "pican-app")
 add_executable(${MAIN_EXECUTABLE} main.cpp)
 
 target_link_libraries(${MAIN_EXECUTABLE} PRIVATE
-        PICAN_LIB
+        pican
 )
 
 target_link_options(${MAIN_EXECUTABLE} PRIVATE

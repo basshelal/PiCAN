@@ -61,11 +61,27 @@
       "configurePreset": "release-config"
     }
   ],
+  "testPresets": [
+    {
+      "name": "debug-run-tests",
+      "configurePreset": "debug-config",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release-run-tests",
+      "configurePreset": "release-config",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ],
   "workflowPresets": [
     {
       "name": "debug",
       "displayName": "debug workflow",
-      "description": "runs configure and build with the preset debug-app",
+      "description": "runs configure, build, and tests for debug",
       "steps": [
         {
           "type": "configure",
@@ -78,6 +94,33 @@
         {
           "type": "build",
           "name": "debug-test"
+        },
+        {
+          "type": "test",
+          "name": "debug-run-tests"
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "displayName": "release workflow",
+      "description": "runs configure, build, and tests for release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "release-config"
+        },
+        {
+          "type": "build",
+          "name": "release-app"
+        },
+        {
+          "type": "build",
+          "name": "release-test"
+        },
+        {
+          "type": "test",
+          "name": "release-run-tests"
         }
       ]
     }

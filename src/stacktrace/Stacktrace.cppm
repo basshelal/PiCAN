@@ -43,7 +43,8 @@ public:
 
     void
     write_string(const char* string) const {
-        ::write(this->fd_m, string, strlen(string));
+        [[maybe_unused]]
+        ssize_t _ = ::write(this->fd_m, string, strlen(string));
     }
 
     void
@@ -51,14 +52,16 @@ public:
         char buf[32];
         buf[0] = '0';
         buf[1] = 'x';
-        ::snprintf(buf, sizeof(buf), "0x%lx", val);
+        [[maybe_unused]]
+        int _ = ::snprintf(buf, sizeof(buf), "0x%lx", val);
         this->write_string(buf);
     }
 
     void
     write_int(int val) const {
         char buf[16];
-        ::snprintf(buf, sizeof(buf), "%d", val);
+        [[maybe_unused]]
+        int _ = ::snprintf(buf, sizeof(buf), "%d", val);
         this->write_string(buf);
     }
 };

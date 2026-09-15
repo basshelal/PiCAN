@@ -36,7 +36,8 @@ namespace {
 void
 default_violation_callback([[maybe_unused]] std::size_t sizeBytes, [[maybe_unused]] void* userData) {
     std::string_view message{"Illegal allocation!\nHeap has been sealed, stacktrace:\n"};
-    ::write(STDERR_FILENO, message.data(), message.length());
+    [[maybe_unused]]
+    ssize_t _ = ::write(STDERR_FILENO, message.data(), message.length());
     stacktrace::print_stacktrace(stderr, 1);
 
     _exit(1);  // exit immediately
@@ -59,7 +60,8 @@ void*
 check_ptr_alloc(void* const ptr) {
     if (ptr == nullptr) {
         std::string_view message{"Failed to allocate!\n stacktrace:\n\n"};
-        ::write(STDERR_FILENO, message.data(), message.length());
+        [[maybe_unused]]
+        ssize_t _ = ::write(STDERR_FILENO, message.data(), message.length());
         stacktrace::print_stacktrace(stderr, 1);
 
         _exit(1);  // exit immediately

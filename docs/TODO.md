@@ -2,6 +2,7 @@
 
 ## Verification
 
+* Make CMake check that all the files/tools are found and maybe even run an install script run
 * Use CMake presets/targets for all stages of build and verification (they can call python scripts):
     * Build debug app
     * Build debug tests to run with ASan, MSan, TSan, UBSan and Valgrind
@@ -15,6 +16,7 @@
 ### Investigate
 
 * Docker build on a CI (very likely GitHub actions)
+* Need to have a yocto build on the CI with tests running on the target architecture
 * `cppcheck`
 * Yocto and qemu emulation
 * A code coverage tool
@@ -31,6 +33,9 @@
 
 ## Implementation
 
+* Better way of ignoring unused variables?
+* IMPORTANT! Need a better way where we can have `mlockall` _just_ work, no need for sudo and no 
+  hacks or tricks
 * Set panic handler and allow panic to take a fmt formattable string!
 * I think we need to restructure our modules and namespaces, contracts, and maybe heap and trace don't need to be in
   pican! At least not in the namespace for sure (no benefit in having them separate CMake libs)
