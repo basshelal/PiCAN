@@ -65,9 +65,12 @@ public:  // static functions
             pican::panic("Could not initialize memory manager, mmap failed!");
         }
 
-        const int result = ::mlockall(MCL_CURRENT | MCL_FUTURE);
-        if (result != 0) {
-            pican::panic("Could not initialize memory manager, mlockall failed!");
+        if constexpr (IS_HOST_BUILD) {
+            // TODO(bxh) 15-Sep-26 21:29 We can check that the memory was indeed locked (and possibly which address?)
+            const int result = ::mlockall(MCL_CURRENT | MCL_FUTURE);
+            if (result != 0) {
+                pican::panic("Could not initialize memory manager, mlockall failed!");
+            }
         }
 
         contracts::assertion(toAllocate > sizeof(Manager));

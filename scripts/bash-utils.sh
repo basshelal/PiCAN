@@ -22,7 +22,7 @@ export TEST_DIR=$(realpath "$PROJECT_DIR/test")
 
 if [[ ! -d "$PROJECT_DIR/build" ]]; then
     mkdir -p "$PROJECT_DIR/build/debug"
-    mkdir -p "$PROJECT_DIR/build/release"
+    mkdir -p "$PROJECT_DIR/build/relinfo"
 fi
 
 # The build dir in the project root
@@ -32,7 +32,7 @@ export BUILD_DIR=$(realpath "$PROJECT_DIR/build")
 export BUILD_DEBUG_DIR=$(realpath "$BUILD_DIR/debug")
 
 # The release build dir
-export BUILD_RELEASE_DIR=$(realpath "$BUILD_DIR/release")
+export BUILD_RELEASE_DIR=$(realpath "$BUILD_DIR/relinfo")
 
 # Number of processors
 export NUM_PROC=$(nproc)

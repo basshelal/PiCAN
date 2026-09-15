@@ -17,13 +17,14 @@
       }
     },
     {
-      "name": "release-config",
-      "displayName": "release configure preset",
-      "binaryDir": "${sourceDir}/build/release",
+      "name": "relinfo-config",
+      "displayName": "release with debug info configure preset",
+      "binaryDir": "${sourceDir}/build/relinfo",
       "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "PICAN_CONTRACTS_DISABLED": ""
       }
     }
   ],
@@ -45,20 +46,20 @@
       "configurePreset": "debug-config"
     },
     {
-      "name": "release-app",
-      "displayName": "release app (no tests)",
+      "name": "relinfo-app",
+      "displayName": "relinfo app (no tests)",
       "targets": [
         "pican-app"
       ],
-      "configurePreset": "release-config"
+      "configurePreset": "relinfo-config"
     },
     {
-      "name": "release-test",
-      "displayName": "release tests",
+      "name": "relinfo-test",
+      "displayName": "relinfo tests",
       "targets": [
         "pican-test"
       ],
-      "configurePreset": "release-config"
+      "configurePreset": "relinfo-config"
     }
   ],
   "testPresets": [
@@ -70,8 +71,8 @@
       }
     },
     {
-      "name": "release-run-tests",
-      "configurePreset": "release-config",
+      "name": "relinfo-run-tests",
+      "configurePreset": "relinfo-config",
       "output": {
         "outputOnFailure": true
       }
@@ -80,7 +81,6 @@
   "workflowPresets": [
     {
       "name": "debug",
-      "displayName": "debug workflow",
       "description": "runs configure, build, and tests for debug",
       "steps": [
         {
@@ -102,25 +102,25 @@
       ]
     },
     {
-      "name": "release",
-      "displayName": "release workflow",
-      "description": "runs configure, build, and tests for release",
+      "name": "relinfo",
+      "displayName": "release with debug info",
+      "description": "runs configure, build, and tests for relinfo",
       "steps": [
         {
           "type": "configure",
-          "name": "release-config"
+          "name": "relinfo-config"
         },
         {
           "type": "build",
-          "name": "release-app"
+          "name": "relinfo-app"
         },
         {
           "type": "build",
-          "name": "release-test"
+          "name": "relinfo-test"
         },
         {
           "type": "test",
-          "name": "release-run-tests"
+          "name": "relinfo-run-tests"
         }
       ]
     }

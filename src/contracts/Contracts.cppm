@@ -8,14 +8,17 @@ module;
 #include <type_traits>
 #include <utility>
 
-// Map the build system definition to our constexpr level
-#ifndef CONTRACTS_ENABLED
-#define CONTRACTS_ENABLED 1
-#endif
-
 export module contracts:Contracts;
 
 import stacktrace;
+
+constexpr bool IS_CONTRACTS_ENABLED =
+#ifdef PICAN_CONTRACTS_DISABLED
+    false;
+#else
+    true;
+#endif
+
 
 export namespace contracts {
 enum class ContractsLevel : std::uint8_t {
@@ -33,7 +36,7 @@ _contract_violation_at_compile_time() {
 
 namespace {
 constexpr contracts::ContractsLevel level =
-    (CONTRACTS_ENABLED != 0) ? contracts::ContractsLevel::ALL : contracts::ContractsLevel::NONE;
+    IS_CONTRACTS_ENABLED ? contracts::ContractsLevel::ALL : contracts::ContractsLevel::NONE;
 
 }  // namespace
 

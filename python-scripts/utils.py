@@ -24,7 +24,7 @@ BUILD_DIR: Path = PROJECT_DIR / "build"
 BUILD_DEBUG_DIR: Path = BUILD_DIR / "debug"
 
 # The release build dir
-BUILD_RELEASE_DIR: Path = BUILD_DIR / "release"
+BUILD_RELEASE_DIR: Path = BUILD_DIR / "relinfo"
 
 # Number of processors
 NUM_PROC: int = os.cpu_count() or 1

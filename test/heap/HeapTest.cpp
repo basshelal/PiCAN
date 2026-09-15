@@ -2,6 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
+import pican.test_utils;
 import pican.core;
 import heap;
 import stacktrace;
@@ -18,9 +19,9 @@ TEST_CASE("Heap") {
         REQUIRE(data.sizeBytes == 0);
         heap::set_violation_callback(
             [](std::size_t sizeBytes, void* userData) -> void {
-                auto* data = static_cast<Data*>(userData);
-                data->called = true;
-                data->sizeBytes = sizeBytes;
+                auto* inner_data = static_cast<Data*>(userData);
+                inner_data->called = true;
+                inner_data->sizeBytes = sizeBytes;
             },
             &data
         );
@@ -28,16 +29,17 @@ TEST_CASE("Heap") {
         heap::seal_heap();
         REQUIRE(heap::heap_is_sealed());
         const std::size_t allocations_count = heap::allocations_count();
-        [[maybe_unused]]
         int* unused = new int;
-        REQUIRE(data.called);
-        REQUIRE(data.sizeBytes == sizeof(int));
-        REQUIRE(heap::allocations_count() == allocations_count);
+        pican::test_utils::do_not_optimize(unused);
+        CHECK(data.called);
+        CHECK(data.sizeBytes == sizeof(int));
+        CHECK(heap::allocations_count() == allocations_count);
         heap::unseal_heap();
         heap::reset_violation_callback();
         data.called = false;
         unused = new int;
-        REQUIRE(data.called == false);
-        REQUIRE(heap::allocations_count() == (allocations_count + 1));
+        pican::test_utils::do_not_optimize(unused);
+        CHECK(data.called == false);
+        CHECK(heap::allocations_count() == (allocations_count + 1));
     }
 }

@@ -33,8 +33,8 @@ COPY . .
 RUN uv sync
 
 # Activate the venv and run CMake workflows wrapped with our mlockall fix script
-RUN . .venv/bin/activate && ./scripts/fix_mlockall_in_docker.sh cmake --workflow --preset debug
-RUN . .venv/bin/activate && ./scripts/fix_mlockall_in_docker.sh cmake --workflow --preset release
+RUN . .venv/bin/activate && cmake --workflow --preset debug
+RUN . .venv/bin/activate && cmake --workflow --preset relinfo
 
 # Keep the container running if run interactively, or just act as a successful build check
 CMD ["bash"]

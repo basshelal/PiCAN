@@ -34,7 +34,7 @@
 ## Implementation
 
 * Better way of ignoring unused variables?
-* IMPORTANT! Need a better way where we can have `mlockall` _just_ work, no need for sudo and no 
+* IMPORTANT! Need a better way where we can have `mlockall` _just_ work, no need for sudo and no
   hacks or tricks
 * Set panic handler and allow panic to take a fmt formattable string!
 * I think we need to restructure our modules and namespaces, contracts, and maybe heap and trace don't need to be in
