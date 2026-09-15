@@ -1,5 +1,7 @@
 # TODO
 
+* Pipe PICAN CMAKE options from CMAKE into the compile options or definitions or whatever
+
 ## Verification
 
 * Make CMake check that all the files/tools are found and maybe even run an install script run

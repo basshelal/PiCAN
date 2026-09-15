@@ -26,6 +26,26 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "PICAN_CONTRACTS_DISABLED": ""
       }
+    },
+    {
+      "name": "debug-aarch64-config",
+      "inherits": "debug-config",
+      "binaryDir": "${sourceDir}/build/debug-aarch64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/aarch64-toolchain.cmake",
+        "CMAKE_CROSSCOMPILING_EMULATOR": "qemu-aarch64;-L;/usr/aarch64-linux-gnu"
+      }
+    },
+    {
+      "name": "relinfo-aarch64-config",
+      "inherits": "relinfo-config",
+      "binaryDir": "${sourceDir}/build/relinfo-aarch64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/aarch64-toolchain.cmake",
+        "CMAKE_CROSSCOMPILING_EMULATOR": "qemu-aarch64;-L;/usr/aarch64-linux-gnu"
+      }
     }
   ],
   "buildPresets": [
@@ -60,6 +80,22 @@
         "pican-test"
       ],
       "configurePreset": "relinfo-config"
+    },
+    {
+      "name": "debug-aarch64-test",
+      "displayName": "debug aarch64 tests",
+      "targets": [
+        "pican-test"
+      ],
+      "configurePreset": "debug-aarch64-config"
+    },
+    {
+      "name": "relinfo-aarch64-test",
+      "displayName": "relinfo aarch64 tests",
+      "targets": [
+        "pican-test"
+      ],
+      "configurePreset": "relinfo-aarch64-config"
     }
   ],
   "testPresets": [
@@ -76,20 +112,30 @@
       "output": {
         "outputOnFailure": true
       }
+    },
+    {
+      "name": "debug-aarch64-run-tests",
+      "configurePreset": "debug-aarch64-config",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "relinfo-aarch64-run-tests",
+      "configurePreset": "relinfo-aarch64-config",
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ],
   "workflowPresets": [
     {
-      "name": "debug",
+      "name": "debug-test",
       "description": "runs configure, build, and tests for debug",
       "steps": [
         {
           "type": "configure",
           "name": "debug-config"
-        },
-        {
-          "type": "build",
-          "name": "debug-app"
         },
         {
           "type": "build",
@@ -102,7 +148,7 @@
       ]
     },
     {
-      "name": "relinfo",
+      "name": "relinfo-test",
       "displayName": "release with debug info",
       "description": "runs configure, build, and tests for relinfo",
       "steps": [
@@ -112,15 +158,48 @@
         },
         {
           "type": "build",
-          "name": "relinfo-app"
-        },
-        {
-          "type": "build",
           "name": "relinfo-test"
         },
         {
           "type": "test",
           "name": "relinfo-run-tests"
+        }
+      ]
+    },
+    {
+      "name": "debug-aarch64-test",
+      "description": "runs configure, build, and tests for debug aarch64",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug-aarch64-config"
+        },
+        {
+          "type": "build",
+          "name": "debug-aarch64-test"
+        },
+        {
+          "type": "test",
+          "name": "debug-aarch64-run-tests"
+        }
+      ]
+    },
+    {
+      "name": "relinfo-aarch64-test",
+      "displayName": "release with debug info",
+      "description": "runs configure, build, and tests for relinfo aarch64",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "relinfo-aarch64-config"
+        },
+        {
+          "type": "build",
+          "name": "relinfo-aarch64-test"
+        },
+        {
+          "type": "test",
+          "name": "relinfo-aarch64-run-tests"
         }
       ]
     }

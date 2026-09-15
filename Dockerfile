@@ -1,4 +1,3 @@
-# Use a recent Ubuntu image to get recent compilers (Ubuntu 26.04)
 FROM ubuntu:26.04
 
 # Avoid tzdata prompts during apt-get install
@@ -18,23 +17,36 @@ RUN apt-get update && apt-get install -y \
     autoconf \
     automake \
     libtool \
-    libcap2-bin 
+    libcap2-bin \
+    g++-aarch64-linux-gnu \
+    qemu-user && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install uv for Python dependencies (clang-tidy, semgrep, clang-format)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Fix Git "dubious ownership" warnings which frequently break CPM in Docker
+RUN git config --global --add safe.directory '*'
+
 # Set up the working directory
 WORKDIR /app
 
-# Copy the project files
+# Copy the project files ignoring everything in .dockerignore
 COPY . .
 
 # Sync python dependencies to set up formatting & linting tools
 RUN uv sync
 
-# Activate the venv and run CMake workflows wrapped with our mlockall fix script
-RUN . .venv/bin/activate && cmake --workflow --preset debug
-RUN . .venv/bin/activate && cmake --workflow --preset relinfo
+# Activate our venv
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Keep the container running if run interactively, or just act as a successful build check
-CMD ["bash"]
+# TODO these need to be configure and build ONLY, have the CMD do the test running, confusing because it splits our
+#  workflow
+RUN mkdir "/app/build/"
+RUN cmake --build --preset debug-test
+RUN cmake --build --preset relinfo-test
+RUN cmake --build --preset debug-aarch64-test
+RUN cmake --build --preset relinfo-aarch64-test
+
+# Run all tests
+CMD ["scripts/run-all-tests.sh"]

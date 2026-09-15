@@ -65,19 +65,12 @@ CPMAddPackage(
 if (libbacktrace_ADDED)
     include(ExternalProject)
 
-    # Define exactly where the Autotools build will output the static library
     set(BACKTRACE_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/libbacktrace-install")
     set(BACKTRACE_STATIC_LIB "${BACKTRACE_INSTALL_DIR}/lib/libbacktrace.a")
 
-    # Tell CMake how to run ./configure and make
-    ExternalProject_Add(libbacktrace_ext
-            SOURCE_DIR ${libbacktrace_SOURCE_DIR}
-            PREFIX "${CMAKE_CURRENT_BINARY_DIR}/libbacktrace-ext"
-            INSTALL_DIR ${BACKTRACE_INSTALL_DIR}
-
-            # We use 'env' to safely pass your C compiler and flags to Autotools
-            # -fPIC is mandatory so it can be linked into your PiCAN executable
-            CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env
+    # 1. Build the base configuration command without the host flag
+    set(BACKTRACE_CONFIG_CMD
+            ${CMAKE_COMMAND} -E env
             "CC=${CMAKE_C_COMPILER}"
             "CFLAGS=${CMAKE_C_FLAGS} -fPIC"
             <SOURCE_DIR>/configure
@@ -85,11 +78,30 @@ if (libbacktrace_ADDED)
             --libdir=<INSTALL_DIR>/lib
             --enable-shared=no
             --enable-static=yes
+    )
 
+    # Append the --host flag ONLY if we are cross-compiling
+    if (CMAKE_CROSSCOMPILING)
+        if (CMAKE_C_COMPILER_TARGET)
+            # Use the target provided by Yocto
+            list(APPEND BACKTRACE_CONFIG_CMD "--host=${CMAKE_C_COMPILER_TARGET}")
+        else ()
+            # Fallback for the manual aarch64-toolchain.cmake
+            list(APPEND BACKTRACE_CONFIG_CMD "--host=aarch64-linux-gnu")
+        endif ()
+    endif ()
+
+    # Tell CMake how to run ./configure and make
+    ExternalProject_Add(libbacktrace_ext
+            SOURCE_DIR ${libbacktrace_SOURCE_DIR}
+            PREFIX "${CMAKE_CURRENT_BINARY_DIR}/libbacktrace-ext"
+            INSTALL_DIR ${BACKTRACE_INSTALL_DIR}
+
+            CONFIGURE_COMMAND ${BACKTRACE_CONFIG_CMD}
             BUILD_COMMAND make
             INSTALL_COMMAND make install
 
-            # REQUIRED FOR NINJA: Tells the generator not to panic when the .a file is missing initially
+            # Required for Ninja
             BUILD_BYPRODUCTS ${BACKTRACE_STATIC_LIB}
     )
 
