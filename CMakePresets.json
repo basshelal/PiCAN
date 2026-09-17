@@ -7,42 +7,48 @@
   },
   "configurePresets": [
     {
-      "name": "debug-config",
-      "displayName": "debug configure preset",
+      "name": "base-debug",
+      "hidden": true,
       "binaryDir": "${sourceDir}/build/debug",
       "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "relinfo-config",
-      "displayName": "release with debug info configure preset",
+      "name": "base-relinfo",
+      "hidden": true,
       "binaryDir": "${sourceDir}/build/relinfo",
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "PICAN_CONTRACTS_DISABLED": ""
+        "PICAN_CONTRACTS_DISABLED": "ON"
       }
     },
     {
+      "name": "debug-config",
+      "displayName": "debug configure preset",
+      "inherits": "base-debug"
+    },
+    {
+      "name": "relinfo-config",
+      "displayName": "release with debug info configure preset",
+      "inherits": "base-relinfo"
+    },
+    {
       "name": "debug-aarch64-config",
-      "inherits": "debug-config",
+      "inherits": "base-debug",
       "binaryDir": "${sourceDir}/build/debug-aarch64",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/aarch64-toolchain.cmake",
         "CMAKE_CROSSCOMPILING_EMULATOR": "qemu-aarch64;-L;/usr/aarch64-linux-gnu"
       }
     },
     {
       "name": "relinfo-aarch64-config",
-      "inherits": "relinfo-config",
+      "inherits": "base-relinfo",
       "binaryDir": "${sourceDir}/build/relinfo-aarch64",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/aarch64-toolchain.cmake",
         "CMAKE_CROSSCOMPILING_EMULATOR": "qemu-aarch64;-L;/usr/aarch64-linux-gnu"
       }

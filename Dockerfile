@@ -19,6 +19,10 @@ RUN apt-get update && apt-get install -y \
     libtool \
     libcap2-bin \
     g++-aarch64-linux-gnu \
+    crossbuild-essential-arm64 \
+    libc6-dev-arm64-cross \
+    libc6-arm64-cross \
+    linux-libc-dev-arm64-cross \
     qemu-user && \
     rm -rf /var/lib/apt/lists/*
 
@@ -42,11 +46,10 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # TODO these need to be configure and build ONLY, have the CMD do the test running, confusing because it splits our
 #  workflow
-RUN mkdir "/app/build/"
-RUN cmake --build --preset debug-test
-RUN cmake --build --preset relinfo-test
-RUN cmake --build --preset debug-aarch64-test
-RUN cmake --build --preset relinfo-aarch64-test
+RUN cmake --preset debug-config && cmake --build --preset debug-test
+RUN cmake --preset relinfo-config && cmake --build --preset relinfo-test
+RUN cmake --preset debug-aarch64-config && cmake --build --preset debug-aarch64-test
+RUN cmake --preset relinfo-aarch64-config && cmake --build --preset relinfo-aarch64-test
 
 # Run all tests
 CMD ["scripts/run-all-tests.sh"]
