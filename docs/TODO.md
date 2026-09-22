@@ -1,6 +1,7 @@
 # TODO
 
 * Pipe PICAN CMAKE options from CMAKE into the compile options or definitions or whatever
+* Make CMake check that all the files/tools are found and maybe even run an install script run
 
 ## Verification
 
@@ -13,6 +14,7 @@
     * clang-format verify
     * clang-tidy verify
     * semgrep verify
+    * cppcheck verify
 * Begin adding semgrep rules with help of AI
 
 ### Investigate
@@ -39,8 +41,6 @@
 * IMPORTANT! Need a better way where we can have `mlockall` _just_ work, no need for sudo and no
   hacks or tricks
 * Set panic handler and allow panic to take a fmt formattable string!
-* I think we need to restructure our modules and namespaces, contracts, and maybe heap and trace don't need to be in
-  pican! At least not in the namespace for sure (no benefit in having them separate CMake libs)
 * Ensure Result is ready to use, use contracts in it and try to test it as much as possible
 * Catch2 needs the heap to be unsealed to write the strings when a test fails
 * It also needs exceptions to be available in order to not end with a SIGABRT after the first failed test

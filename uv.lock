@@ -291,6 +291,34 @@ wheels = [
 ]
 
 [[package]]
+name = "cppcheck-py"
+version = "2.21.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pygments" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ec/ee/b1989157f50df0362ac077798e13e047fe3286ceb3a46c5264d897e33976/cppcheck_py-2.21.1.tar.gz", hash = "sha256:1c275d81d57770efe5d1adf17154304524867ec00ef95df93c91d6f44a918091", size = 12125, upload-time = "2026-09-11T15:51:57.294Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/58/ae302f9518b2390da600990a45ae0aaf59705b8915184b491ded6829f7a8/cppcheck_py-2.21.1-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:862f8453f54b7a010efb497ef838e7aafbd01b10a0308c9042b1a22c3b59253a", size = 6837200, upload-time = "2026-09-11T15:51:20.028Z" },
+    { url = "https://files.pythonhosted.org/packages/e2/dd/3e66efa28b6ee316aa3afd690a5fccdade288aba11b63596d16a2418c836/cppcheck_py-2.21.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:bf395d607887da5e60a4976cbce5eb0fc41a885716e770328a71a0e87e8aec2a", size = 6672222, upload-time = "2026-09-11T15:51:22.008Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/e5/304a15a59baeb1d9e6db8975ba6697b6a0cb0bad00613fb743368cbab39a/cppcheck_py-2.21.1-py3-none-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c2e0370a126a5e062a276c154d8fa55ff396ca3c42a987815acdc30c191181b4", size = 6873236, upload-time = "2026-09-11T15:51:23.683Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/e2/954cafabd91bf876ef188657b4e33c8dc62ff5a555c43e07f04313606f87/cppcheck_py-2.21.1-py3-none-manylinux_2_26_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:4e0ca07c9a810de0ac03fc132f28abffd575f1778aa4503fdf7825865034d339", size = 7264363, upload-time = "2026-09-11T15:51:29.741Z" },
+    { url = "https://files.pythonhosted.org/packages/56/83/cb325c28c5de3ee5f930593dc9edb0b37a3f86ed9020dd15256448b01a20/cppcheck_py-2.21.1-py3-none-manylinux_2_26_s390x.manylinux_2_28_s390x.whl", hash = "sha256:7d8cd7efc9e934effa52e3776492b377261106443e31d280241cbb88afacbf4b", size = 7152090, upload-time = "2026-09-11T15:51:31.797Z" },
+    { url = "https://files.pythonhosted.org/packages/02/4c/2467a7894095d2d998f87b4e3fca5ba6101264255ecfa758ce2361076ca1/cppcheck_py-2.21.1-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:aa9206f5b1544358ca3110c71907b16d5ec5dcc5d698a3bc95ae41bcd7831184", size = 7129711, upload-time = "2026-09-11T15:51:33.68Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/33/c2e70bf74583b70f12fc1ee51cf45d34c675968254053b93bb3a8e09f3ad/cppcheck_py-2.21.1-py3-none-manylinux_2_28_i686.whl", hash = "sha256:b0ac35ed6ad6928b3ce9ec7d966f0eb0402a0da2df3fe8aca12c367ff1842a3b", size = 7214893, upload-time = "2026-09-11T15:51:35.835Z" },
+    { url = "https://files.pythonhosted.org/packages/50/be/e0b891b9d1ec742a076fb05dec9c2a6c0dfebbd11d1e3e63d3459d49725a/cppcheck_py-2.21.1-py3-none-manylinux_2_35_armv7l.whl", hash = "sha256:15800889bff2ef387646df36d20eb3de707e98fd39b7e8230df73f900dfd6891", size = 6702334, upload-time = "2026-09-11T15:51:37.776Z" },
+    { url = "https://files.pythonhosted.org/packages/09/05/326f05d8ba4e4219bd5827056bdb62d4f21bec3d9d1aa144297ec1a691a8/cppcheck_py-2.21.1-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:d1a4054c67dc891b5ca85a26d1eb0eaf086a04532d9e955b346e3102bfb228d8", size = 8017384, upload-time = "2026-09-11T15:51:39.564Z" },
+    { url = "https://files.pythonhosted.org/packages/82/9b/8777a21bba435395605656338c30b6a7592938153e1cf277e4260d1a2492/cppcheck_py-2.21.1-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:0766b4f86458c139f3937273dc8fe86dfc818845bb3de4359021021421888fb7", size = 7681570, upload-time = "2026-09-11T15:51:41.665Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/40/e9b691cc48dedee83e1996c59ae53345a5d0759c00c21d29acdf78e29a82/cppcheck_py-2.21.1-py3-none-musllinux_1_2_i686.whl", hash = "sha256:31101efe2746accea5714232cde73b7a8d487530755fc37d9db28878bf01bde2", size = 8660445, upload-time = "2026-09-11T15:51:43.441Z" },
+    { url = "https://files.pythonhosted.org/packages/4e/cc/72175490cccbe6b241b332f5f0bab3b6e8051389b00d2bb9cf3ce1cb711b/cppcheck_py-2.21.1-py3-none-musllinux_1_2_ppc64le.whl", hash = "sha256:793f7176b69b039852cef2bfd40a0981f88341176b88b5c7d686cd165db294fa", size = 8496086, upload-time = "2026-09-11T15:51:45.321Z" },
+    { url = "https://files.pythonhosted.org/packages/95/d5/0a84e0e3f4fea965f99cc8a75f59e5203903272ce563eb0019079720a53f/cppcheck_py-2.21.1-py3-none-musllinux_1_2_s390x.whl", hash = "sha256:96629011ad0d7e022d2080031807658f1c3bbdfe5bb1f47d5d12a3e1f8ba253a", size = 8443686, upload-time = "2026-09-11T15:51:47.606Z" },
+    { url = "https://files.pythonhosted.org/packages/37/c0/d9fc62cd7851be96f54274aae8807706752713678f1787c1d8e7d4c2144a/cppcheck_py-2.21.1-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:2c2d895a7d96041cd150f6ec361723d06dd972521a3a90ba3ed61560e691a53d", size = 8328035, upload-time = "2026-09-11T15:51:49.705Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/6c/5aa326fc7a2ac94a5409459c07f06169fbe4f70b0d909ba959711568607e/cppcheck_py-2.21.1-py3-none-win32.whl", hash = "sha256:3616143e991cac17e1d9d62afb53c5e14a7f0e02a19bd805e7a06548f7ff24a1", size = 6457499, upload-time = "2026-09-11T15:51:51.76Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/9c/8c93e54d0223a7d6f0676486c47f91dc034f4e7b2eb6e57eefabd45fcd1a/cppcheck_py-2.21.1-py3-none-win_amd64.whl", hash = "sha256:7d9743d9c7863674978d48b46f03943d017c0b8803c24a1c6a0406c512b2e46b", size = 6696422, upload-time = "2026-09-11T15:51:53.532Z" },
+    { url = "https://files.pythonhosted.org/packages/af/7f/12df03602bd1570466e31610be155cca48f84237eb544d1951476bc242d3/cppcheck_py-2.21.1-py3-none-win_arm64.whl", hash = "sha256:77bdfcea87fe3824434357a41d4ed9fdcf82180f27ca398760045fcaf1aab6d1", size = 6536256, upload-time = "2026-09-11T15:51:55.483Z" },
+]
+
+[[package]]
 name = "cryptography"
 version = "50.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -687,6 +715,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "clang-format" },
     { name = "clang-tidy" },
+    { name = "cppcheck-py" },
     { name = "semgrep" },
 ]
 
@@ -694,6 +723,7 @@ dependencies = [
 requires-dist = [
     { name = "clang-format", specifier = ">=23.1.1" },
     { name = "clang-tidy", specifier = ">=22.1.8" },
+    { name = "cppcheck-py", specifier = ">=2.21.1" },
     { name = "semgrep", specifier = ">=1.177.0" },
 ]
 
