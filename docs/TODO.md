@@ -22,6 +22,8 @@
 * Docker build on a CI (very likely GitHub actions)
 * Need to have a yocto build on the CI with tests running on the target architecture
 * `cppcheck`
+* Clang analyzer
+* CodeChecker
 * Yocto and qemu emulation
 * A code coverage tool
 * C Bounded Model Checker

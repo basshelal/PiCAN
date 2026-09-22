@@ -41,15 +41,17 @@ COPY . .
 # Sync python dependencies to set up formatting & linting tools
 RUN uv sync
 
+# Install the latest version of CPM
+RUN scripts/install-cpm.sh
+
 # Activate our venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-# TODO these need to be configure and build ONLY, have the CMD do the test running, confusing because it splits our
-#  workflow
+# Configure and build tests per "preset" but don't run them
 RUN cmake --preset debug-config && cmake --build --preset debug-test
 RUN cmake --preset relinfo-config && cmake --build --preset relinfo-test
 RUN cmake --preset debug-aarch64-config && cmake --build --preset debug-aarch64-test
 RUN cmake --preset relinfo-aarch64-config && cmake --build --preset relinfo-aarch64-test
 
-# Run all tests
+# Run all tests during docker run
 CMD ["scripts/run-all-tests.sh"]

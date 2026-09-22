@@ -26,6 +26,38 @@ else ()
     message("Not using mold linker")
 endif ()
 
+# TODO review which flags from the below we will need!
+# portable warning set
+
+#-Wall -Wextra -Wpedantic -Werror
+#-Wconversion -Wsign-conversion -Wold-style-cast -Wcast-qual -Wcast-align
+#-Wshadow -Wnon-virtual-dtor -Woverloaded-virtual -Wsuggest-override
+#-Wnull-dereference -Wdouble-promotion -Wfloat-equal -Wformat=2
+#-Wundef -Wswitch-enum -Wimplicit-fallthrough -Wextra-semi
+#-Wzero-as-null-pointer-constant -Wvla -Wmissing-declarations
+
+# GCC-only extras
+
+#-Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wuseless-cast
+#-Wmismatched-tags -Wanalyzer-* (via -fanalyzer; strong on C, improving on C++)
+
+# freestanding-ish policy
+
+#-fno-exceptions -fno-rtti -fno-threadsafe-statics
+#-fno-unwind-tables -fno-asynchronous-unwind-tables
+#-fstack-usage -Wstack-usage=2048 -Wframe-larger-than=1024
+#-ffunction-sections -fdata-sections -Wl,--gc-sections
+
+#add_compile_options(
+#        -fno-exceptions # No exceptions
+#        -fno-rtti       # No RTTI
+#)
+#add_compile_options(
+#        -Wall -Wextra -Wpedantic -Werror #
+#        -Wno-interference-size   # Allow use of std::*interference_size alignas variables
+#        -Wno-attributes=pican::  # Allow for attributes starting with pican::
+#)
+
 add_compile_options(-fno-exceptions -fno-unwind-tables -fno-rtti)
 add_compile_options(-Wall -Werror -pedantic -Wno-interference-size -Wno-attributes=pican::)
 
