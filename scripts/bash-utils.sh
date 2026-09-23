@@ -20,9 +20,12 @@ export SRC_DIR=$(realpath "$PROJECT_DIR/src")
 # The test dir in the project root
 export TEST_DIR=$(realpath "$PROJECT_DIR/test")
 
+# The venv dir in the project root
+export VENV_DIR=$(realpath "$PROJECT_DIR/.venv")
+
 if [[ ! -d "$PROJECT_DIR/build" ]]; then
-    mkdir -p "$PROJECT_DIR/build/debug"
-    mkdir -p "$PROJECT_DIR/build/relinfo"
+  mkdir -p "$PROJECT_DIR/build/debug"
+  mkdir -p "$PROJECT_DIR/build/relinfo"
 fi
 
 # The build dir in the project root
@@ -38,13 +41,13 @@ export BUILD_RELEASE_DIR=$(realpath "$BUILD_DIR/relinfo")
 export NUM_PROC=$(nproc)
 
 require_command() {
-    local cmd="$1"
-    if ! command -v "$cmd" &> /dev/null; then
-        echo "Error: "$cmd" could not be found!" >&2
-        exit 1
-    fi
+  local cmd="$1"
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "Error: "$cmd" could not be found!" >&2
+    exit 1
+  fi
 }
 
 echo_error() {
-    printf "\033[0;31m%s\n\033[0m" "$*" >&2
+  printf "\033[0;31m%s\n\033[0m" "$*" >&2
 }
