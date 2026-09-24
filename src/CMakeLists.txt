@@ -17,6 +17,7 @@ target_link_options(${MAIN_EXECUTABLE} PRIVATE
         "LINKER:--wrap=calloc"
         "LINKER:--wrap=realloc"
         "LINKER:--wrap=aligned_alloc"
+        "--gc-sections"
 )
 
 install(TARGETS ${MAIN_EXECUTABLE}

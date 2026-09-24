@@ -1,21 +1,17 @@
 # TODO
 
 * Pipe PICAN CMAKE options from CMAKE into the compile options or definitions or whatever
-* Make CMake check that all the files/tools are found and maybe even run an install script run
+* Reconsider our stance on modules, we stand to lose a lot and gain little, header only
+  will achieve what we want at the slight cost of build times ballooning (which we will use
+  ccache for) and `inline` everywhere, which is incredibly frustrating.
+  The better strategy is that each of our current modules (henceforth I will call them subsystems)
+  becomes its own shared library, a CMake library that has all of its implementation is headers only
+  and has a single exposing cpp file which is the one thing compiled by CMake in the library.
+  This library thus gets cached for use with `ccache`, which we need to bring back
 
 ## Verification
 
-* Make CMake check that all the files/tools are found and maybe even run an install script run
-* Use CMake presets/targets for all stages of build and verification (they can call python scripts):
-    * Build debug app
-    * Build debug tests to run with ASan, MSan, TSan, UBSan and Valgrind
-    * Build release (with debug info) app, needs debug info so we can have stacktraces
-    * Build release (with debug info) tests to run with ASan, MSan, TSan, UBSan and Valgrind
-    * clang-format verify
-    * clang-tidy verify
-    * semgrep verify
-    * cppcheck verify
-* Begin adding semgrep rules with help of AI
+* Build tests to run with ASan, MSan, TSan, UBSan and Valgrind
 
 ### Investigate
 

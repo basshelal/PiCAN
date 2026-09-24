@@ -46,19 +46,9 @@ endif ()
 #-fno-exceptions -fno-rtti -fno-threadsafe-statics
 #-fno-unwind-tables -fno-asynchronous-unwind-tables
 #-fstack-usage -Wstack-usage=2048 -Wframe-larger-than=1024
-#-ffunction-sections -fdata-sections -Wl,--gc-sections
+#-ffunction-sections -fdata-sections
 
-#add_compile_options(
-#        -fno-exceptions # No exceptions
-#        -fno-rtti       # No RTTI
-#)
-#add_compile_options(
-#        -Wall -Wextra -Wpedantic -Werror #
-#        -Wno-interference-size   # Allow use of std::*interference_size alignas variables
-#        -Wno-attributes=pican::  # Allow for attributes starting with pican::
-#)
-
-add_compile_options(-fno-exceptions -fno-unwind-tables -fno-rtti)
+add_compile_options(-fno-exceptions -fno-rtti)
 add_compile_options(-Wall -Werror -pedantic -Wno-interference-size -Wno-attributes=pican::)
 
 # CPM for package/dependency management, see: https://github.com/cpm-cmake/CPM.cmake
@@ -158,76 +148,11 @@ add_subdirectory(src)
 enable_testing()
 add_subdirectory(test)
 
-# TODO clean this up! I don't want extra CMake targets, instead defer this to scripts
-find_program(CLANG_FORMAT_EXE NAMES "clang-format")
-if (CLANG_FORMAT_EXE)
-    # A. The "Check" Target (For CI/Audits) - Fails if code is messy
-    file(GLOB_RECURSE SOURCES_TO_FORMAT
-            "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cppm"
-            "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-            "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
-            "${CMAKE_CURRENT_SOURCE_DIR}/src//*.c"
-            "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
-    )
-
-    add_custom_target(
-            format-check
-            COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror -i
-            ${SOURCES_TO_FORMAT}
-            COMMENT "Checking code formatting..."
-    )
-
-    # B. The "Fix" Target (For You) - actually changes the files
-    add_custom_target(
-            format
-            COMMAND ${CLANG_FORMAT_EXE} -i
-            ${SOURCES_TO_FORMAT}
-            COMMENT "Formatting code..."
-    )
-endif ()
-
-include(ProcessorCount)
-ProcessorCount(NUM_CORES)
-if (NUM_CORES EQUAL 0)
-    set(NUM_CORES 1)
-endif ()
-
-find_program(RUN_CLANG_TIDY_EXE NAMES "run-clang-tidy" "run-clang-tidy.py")
-if (RUN_CLANG_TIDY_EXE)
-    add_custom_target(
-            run-clang-tidy
-            COMMAND ${RUN_CLANG_TIDY_EXE}
-            -p ${CMAKE_BINARY_DIR}
-            -j ${NUM_CORES}
-            "^${CMAKE_SOURCE_DIR}/src/.*"
-            COMMENT "Running clang-tidy in parallel (-j ${NUM_CORES})..."
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            VERBATIM
-    )
-else ()
-    message(FATAL_ERROR "run-clang-tidy not found!")
-endif ()
-
-find_program(SEMGREP_EXE NAMES "semgrep")
-if (SEMGREP_EXE)
-    add_custom_target(
-            run-semgrep
-            COMMAND ${SEMGREP_EXE}
-            -c .semgrep.yaml
-            -j ${NUM_CORES}
-            --strict
-            -q
-            src/
-            COMMENT "Running semgrep in parallel (-j ${NUM_CORES})..."
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            VERBATIM
-    )
-else ()
-    message(WARNING "semgrep not found!")
-endif ()
+include(cmake/script-targets.cmake)
 
 # Make git use .githooks/ as its git hooks directory, this way,
 # our hooks are tracked in git and can run out of the box after a git clone
+# TODO don't keep setting it, just check it then set if not valid, then check again to verify
 find_package(Git)
 if (GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
     execute_process(

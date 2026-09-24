@@ -4,12 +4,13 @@ Work in progress
 
 ## Requirements
 
-`cmake` (and a generator like `ninja` preferred or `make`)
-`gcc`
-`mold` linker optionally for better link times
-`uv` to manage installation of all tools (`clang-format`, `clang-tidy`, `semgrep`)
+* `cmake`
+* `ninja`
+* `gcc`
+* `make` (to compile `libbacktrace`)
+* `mold` (optional) for faster link times
+* `uv` (to manage python and additional tools like `clang-tidy`)
 `socketcan` ?
-`bash` for scripts
 
 ## Dependencies
 
@@ -38,9 +39,3 @@ or swap `@wheel` with only your user, and unlimited with the desired number like
 logout and back in the limits should be as expected by running `ulimit -l` to see.
 
 ## Structure
-
-## Checks (MISRA C++) Static Analysis Pipeline
-
-clang-format
-clang-tidy
-semgrep
