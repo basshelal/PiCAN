@@ -4,6 +4,8 @@ module;
 
 export module pican.core:TypeDef;
 
+import contracts;
+
 export namespace pican {
 template<typename TP, typename Tag_TP>
 class TypeDef {
@@ -14,9 +16,17 @@ public:  // constructors
     TypeDef() = default;
 
     explicit constexpr TypeDef(const TP& value) : value_f{value} {
+        contracts::assertion(sizeof(TypeDef) == sizeof(TP));
+        contracts::assertion(
+            reinterpret_cast<void*>(std::addressof(*this)) == reinterpret_cast<void*>(std::addressof(this->value_f))
+        );
     }
 
     explicit constexpr TypeDef(TP&& value) : value_f{std::move(value)} {
+        contracts::assertion(sizeof(TypeDef) == sizeof(TP));
+        contracts::assertion(
+            reinterpret_cast<void*>(std::addressof(*this)) == reinterpret_cast<void*>(std::addressof(this->value_f))
+        );
     }
 
 public:  // copy-control
