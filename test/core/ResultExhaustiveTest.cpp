@@ -1,216 +1,212 @@
-// 
-// Exhaustive test suite for Result.cppm
-// 
-// This suite leverages Catch2's GENERATE and DYNAMIC_SECTION to compactly cover
-// the entire combinatorial space of states (Success/Failure) and creation methods
-// (Copy, Move, Emplace, Default). It tests copy/move semantics, accessors, 
-// and cross-state assignments.
-
 #include <string>
-#include <tuple>
 #include <utility>
-#include <optional>
+
 #include <catch2/catch_all.hpp>
 
 import pican.test_utils;
 import pican.core;
 
-using pican::Result;
 using pican::test_utils::LifetimeOperation;
 using pican::test_utils::Tracked;
 
 using SuccessType = Tracked<std::string>;
 using FailureType = Tracked<std::string>;
-using ResultType = Result<SuccessType, FailureType>;
+using Result = pican::Result<SuccessType, FailureType>;
 
-// Represents how a Result object is initially constructed
-enum class CreationMethod {
+namespace {
+
+enum class CreationMethod : std::uint8_t {
     BY_COPY,
     BY_MOVE,
     EMPLACE,
-    DEFAULT
+    DEFAULT,
 };
 
-// Helper: Converts CreationMethod enum to a human-readable string for Catch2 sections
-static std::string method_to_string(CreationMethod m) {
+std::string
+to_string(CreationMethod m) {
     switch (m) {
-        case CreationMethod::BY_COPY: return "By Copy";
-        case CreationMethod::BY_MOVE: return "By Move";
-        case CreationMethod::EMPLACE: return "Emplace";
-        case CreationMethod::DEFAULT: return "Default";
+        case CreationMethod::BY_COPY:
+            return "By Copy";
+        case CreationMethod::BY_MOVE:
+            return "By Move";
+        case CreationMethod::EMPLACE:
+            return "Emplace";
+        case CreationMethod::DEFAULT:
+            return "Default";
     }
+
     return "Unknown";
 }
 
-// Helper: Constructs a ResultType in a specific state using a specific method.
-static ResultType create_result(bool asSuccess, CreationMethod method, const std::string& data) {
-    if (asSuccess) {
-        switch (method) {
-            case CreationMethod::BY_COPY: {
-                SuccessType s{data};
-                return ResultType::success_by_copy(s);
+bool
+check_matches(CreationMethod method, LifetimeOperation operation, bool isAssignment) {
+    switch (method) {
+        case CreationMethod::BY_COPY: {
+            if (isAssignment) {
+                CHECKED_ELSE(operation == LifetimeOperation::COPY_ASSIGNMENT) {
+                    return false;
+                }
+            } else {
+                CHECKED_ELSE(operation == LifetimeOperation::COPY_CONSTRUCTOR) {
+                    return false;
+                }
             }
-            case CreationMethod::BY_MOVE: {
-                SuccessType s{data};
-                return ResultType::success_by_move(std::move(s));
-            }
-            case CreationMethod::EMPLACE:
-                return ResultType::success_emplace(data);
-            case CreationMethod::DEFAULT:
-                return ResultType::success_default();
+            return true;
         }
-    } else {
-        switch (method) {
-            case CreationMethod::BY_COPY: {
-                FailureType f{data};
-                return ResultType::failure_by_copy(f);
+        case CreationMethod::BY_MOVE: {
+            if (isAssignment) {
+                CHECKED_ELSE(operation == LifetimeOperation::MOVE_ASSIGNMENT) {
+                    return false;
+                }
+            } else {
+                CHECKED_ELSE(operation == LifetimeOperation::MOVE_CONSTRUCTOR) {
+                    return false;
+                }
             }
-            case CreationMethod::BY_MOVE: {
-                FailureType f{data};
-                return ResultType::failure_by_move(std::move(f));
+            return true;
+        }
+        case CreationMethod::EMPLACE:
+        case CreationMethod::DEFAULT: {
+            if (isAssignment) {
+                FAIL("Impossible state" << to_string(method) << "  and isAssignment");
+                return false;
             }
-            case CreationMethod::EMPLACE:
-                return ResultType::failure_emplace(data);
-            case CreationMethod::DEFAULT:
-                return ResultType::failure_default();
+            CHECKED_ELSE(operation == LifetimeOperation::CONSTRUCTOR) {
+                return false;
+            }
+            return true;
         }
     }
     pican::panic("Unreachable");
 }
 
+static Result
+create_result(CreationMethod method, bool isSuccess, const std::string& data) {
+    switch (method) {
+        case CreationMethod::BY_COPY: {
+            if (isSuccess) {
+                SuccessType s{data};
+                return Result::success_by_copy(s);
+            }
+            FailureType f{data};
+            return Result::failure_by_copy(f);
+        }
+        case CreationMethod::BY_MOVE: {
+            if (isSuccess) {
+                SuccessType s{data};
+                return Result::success_by_move(std::move(s));
+            }
+            FailureType f{data};
+            return Result::failure_by_move(std::move(f));
+        }
+        case CreationMethod::EMPLACE: {
+            if (isSuccess) {
+                return Result::success_emplace(data);
+            }
+            return Result::failure_emplace(data);
+        }
+        case CreationMethod::DEFAULT: {
+            if (isSuccess) {
+                return Result::success_default();
+            }
+            return Result::failure_default();
+        }
+    }
+    pican::panic("Unreachable");
+}
+}  // namespace
+
 TEST_CASE("Result - Exhaustive Suite") {
-    // GENERATE will run the entire enclosing TEST_CASE dynamically for every combination 
-    // of `isSuccess` and `creationMethod`. This compresses 8 distinct test branches into 1 block.
-    auto isSuccess = GENERATE(true, false);
-    auto creationMethod = GENERATE(
-        CreationMethod::BY_COPY, 
-        CreationMethod::BY_MOVE, 
-        CreationMethod::EMPLACE, 
-        CreationMethod::DEFAULT
-    );
+    const bool isSuccess = GENERATE(true, false);
+    const bool isFailure = !isSuccess;
+    const CreationMethod creationMethod =
+        GENERATE(CreationMethod::BY_COPY, CreationMethod::BY_MOVE, CreationMethod::EMPLACE, CreationMethod::DEFAULT);
 
-    // Create a uniquely named section for each iteration of the GENERATE matrix
-    DYNAMIC_SECTION("State: " << (isSuccess ? "Success" : "Failure") << " | Creation: " << method_to_string(creationMethod)) {
-        
-        std::string primaryData = isSuccess ? "success_data" : "failure_data";
-        
-        // We use std::optional here to safely construct our test subject, `result`, 
-        // deferring its destruction appropriately while manipulating it below.
-        std::optional<ResultType> resultOpt;
-        resultOpt.emplace(create_result(isSuccess, creationMethod, primaryData));
-        ResultType& result = *resultOpt;
-
-        SECTION("State Queries (is_success / is_failure)") {
-            // Verify that state inquiry reflects how it was constructed
-            CHECK(result.is_success() == isSuccess);
-            CHECK(result.is_failure() == !isSuccess);
+    DYNAMIC_SECTION("Creation Method: " << to_string(creationMethod) << (isSuccess ? " Success" : " Failure")) {
+        const std::string data = isSuccess ? "success_data" : "failure_data";
+        const std::string defaultData = "default_data";
+        std::string expectedData;
+        if (creationMethod == CreationMethod::DEFAULT) {
+            expectedData = std::string{};
+        } else {
+            expectedData = data;
         }
-        
-        SECTION("Value Accessors - success_value_or_panic") {
+
+        SuccessType defaultSuccessType{defaultData};
+        Result resultMut = create_result(creationMethod, isSuccess, data);
+        CHECK(resultMut.is_success() == isSuccess);
+        CHECK(resultMut.is_failure() == isFailure);
+
+        const Result resultConst = create_result(creationMethod, isSuccess, data);
+        CHECK(resultConst.is_success() == isSuccess);
+        CHECK(resultConst.is_failure() == isFailure);
+
+        SECTION("success_value_or_else") {
+            SuccessType& defaultRef = defaultSuccessType;
+            SuccessType& ref = resultMut.success_value_or_else(defaultRef);
             if (isSuccess) {
-                // Check L-value mutable reference accessor
-                SuccessType& sRef = result.success_value_or_panic();
-                if (creationMethod != CreationMethod::DEFAULT) CHECK(sRef.data == primaryData);
-                
-                // Check const L-value reference accessor
-                const ResultType& constResult = result;
-                const SuccessType& cRef = constResult.success_value_or_panic();
-                if (creationMethod != CreationMethod::DEFAULT) CHECK(cRef.data == primaryData);
-                
-                // Check R-value extractor 
-                // Extracts the value via move semantics and verifies it registered a move
-                SuccessType extracted = std::move(result).success_value_extract_or_panic();
-                if (creationMethod != CreationMethod::DEFAULT) CHECK(extracted.data == primaryData);
-                CHECK(extracted.lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR);
+                CHECK(ref.data == expectedData);
+                CHECK_FALSE(std::addressof(ref) == std::addressof(defaultRef));
+                CHECK(check_matches(creationMethod, ref.lastOperation, false));
+            } else {
+                CHECK(std::addressof(ref) == std::addressof(defaultRef));
+                CHECK(ref.data == defaultData);
+                CHECK(ref.lastOperation == LifetimeOperation::CONSTRUCTOR);
             }
-            // Note: If !isSuccess, calling this panics by design.
-        }
 
-        SECTION("Value Accessors - failure_value_or_panic") {
-            if (!isSuccess) {
-                // Check L-value mutable reference accessor
-                FailureType& fRef = result.failure_value_or_panic();
-                if (creationMethod != CreationMethod::DEFAULT) CHECK(fRef.data == primaryData);
-                
-                // Check const L-value reference accessor
-                const ResultType& constResult = result;
-                const FailureType& cRef = constResult.failure_value_or_panic();
-                if (creationMethod != CreationMethod::DEFAULT) CHECK(cRef.data == primaryData);
-            }
-            // Note: If isSuccess, calling this panics by design.
-        }
-        
-        SECTION("Value Accessors - success_value_or_else") {
-            SuccessType fallbackMut{"fallback_success"};
-            const SuccessType fallbackConst{"fallback_success"};
-
-            // Test L-value accessor with fallback
-            SuccessType& resMut = result.success_value_or_else(fallbackMut);
+            const SuccessType& defaultRefConst = defaultSuccessType;
+            const SuccessType& refConst = resultConst.success_value_or_else(defaultRefConst);
             if (isSuccess) {
-                // If it was a success, it must return a reference to the active union member
-                CHECK(&resMut == &result.success_value_or_panic());
+                CHECK(refConst.data == expectedData);
+                CHECK_FALSE(std::addressof(refConst) == std::addressof(defaultRefConst));
+                CHECK(check_matches(creationMethod, refConst.lastOperation, false));
             } else {
-                // If it was a failure, it must fall back to the provided reference
-                CHECK(&resMut == &fallbackMut);
-            }
-
-            // Test const L-value accessor with fallback
-            const ResultType& constResult = result;
-            const SuccessType& resConst = constResult.success_value_or_else(fallbackConst);
-            if (isSuccess) {
-                CHECK(&resConst == &constResult.success_value_or_panic());
-            } else {
-                CHECK(&resConst == &fallbackConst);
+                CHECK(std::addressof(refConst) == std::addressof(defaultRefConst));
+                CHECK(refConst.data == defaultData);
+                CHECK(refConst.lastOperation == LifetimeOperation::CONSTRUCTOR);
             }
         }
 
-        SECTION("Value Accessors - failure_value_or_else") {
-            FailureType fallbackMut{"fallback_failure"};
-            const FailureType fallbackConst{"fallback_failure"};
+        SECTION("failure_value_or_else") {
+            // TODO 25-Sept-26 17:45 Make it match like above
+            if (isFailure) {
+                FailureType& failureRef = resultMut.failure_value_or_panic();
+                CHECK(failureRef.data == expectedData);
+                CHECK(check_matches(creationMethod, failureRef.lastOperation, false));
 
-            // Test L-value accessor with fallback
-            FailureType& resMut = result.failure_value_or_else(fallbackMut);
-            if (!isSuccess) {
-                // If it was a failure, it must return a reference to the active union member
-                CHECK(&resMut == &result.failure_value_or_panic());
-            } else {
-                // If it was a success, it must fall back to the provided reference
-                CHECK(&resMut == &fallbackMut);
-            }
+                const FailureType& failureRefConst = resultConst.failure_value_or_panic();
+                CHECK(failureRefConst.data == expectedData);
+                CHECK(check_matches(creationMethod, failureRefConst.lastOperation, false));
 
-            // Test const L-value accessor with fallback
-            const ResultType& constResult = result;
-            const FailureType& resConst = constResult.failure_value_or_else(fallbackConst);
-            if (!isSuccess) {
-                CHECK(&resConst == &constResult.failure_value_or_panic());
-            } else {
-                CHECK(&resConst == &fallbackConst);
+                FailureType failureExtracted = std::move(resultMut).failure_value_extract_or_panic();
+                CHECK(failureExtracted.data == expectedData);
+                CHECK(failureExtracted.lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR);
             }
         }
 
         SECTION("Copy Construction") {
             // Test that the copy constructor safely replicates state
-            ResultType copy = result;
-            CHECK(copy.is_success() == result.is_success());
-            
+            Result copy = resultMut;
+            CHECK(copy.is_success() == resultMut.is_success());
+
             if (isSuccess) {
                 CHECK(copy.success_value_or_panic().lastOperation == LifetimeOperation::COPY_CONSTRUCTOR);
                 if (creationMethod != CreationMethod::DEFAULT) {
-                    CHECK(copy.success_value_or_panic().data == primaryData);
+                    CHECK(copy.success_value_or_panic().data == data);
                 }
             } else {
                 CHECK(copy.failure_value_or_panic().lastOperation == LifetimeOperation::COPY_CONSTRUCTOR);
                 if (creationMethod != CreationMethod::DEFAULT) {
-                    CHECK(copy.failure_value_or_panic().data == primaryData);
+                    CHECK(copy.failure_value_or_panic().data == data);
                 }
             }
         }
 
         SECTION("Move Construction") {
             // Test that the move constructor safely shifts state without extraneous copies
-            ResultType moved = std::move(result);
+            Result moved = std::move(resultMut);
             CHECK(moved.is_success() == isSuccess);
-            
+
             if (isSuccess) {
                 CHECK(moved.success_value_or_panic().lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR);
             } else {
@@ -218,46 +214,53 @@ TEST_CASE("Result - Exhaustive Suite") {
             }
         }
 
-        // Generate a sub-matrix for Assignments: Assigning from both Success/Failure 
+        // Generate a sub-matrix for Assignments: Assigning from both Success/Failure
         // to our current Result instance (which might also be Success/Failure).
         // This covers transitions like Success->Failure, Failure->Success, etc.
         auto assignFromSuccess = GENERATE(true, false);
         DYNAMIC_SECTION("Assignment from State: " << (assignFromSuccess ? "Success" : "Failure")) {
-            
             std::string assignData = assignFromSuccess ? "assign_success_data" : "assign_failure_data";
-            ResultType assignSource = create_result(assignFromSuccess, CreationMethod::EMPLACE, assignData);
-            
+            Result assignSource = create_result(CreationMethod::EMPLACE, assignFromSuccess, assignData);
+
             SECTION("Copy Assignment") {
-                result = assignSource;
-                
-                CHECK(result.is_success() == assignSource.is_success());
+                resultMut = assignSource;
+
+                CHECK(resultMut.is_success() == assignSource.is_success());
                 if (assignFromSuccess) {
-                    CHECK(result.success_value_or_panic().data == assignData);
-                    
-                    // NOTE: If state changes between Success <-> Failure, a proper union manager 
-                    // should destroy the old state and placement-new the new state. If it directly 
+                    CHECK(resultMut.success_value_or_panic().data == assignData);
+
+                    // NOTE: If state changes between Success <-> Failure, a proper union manager
+                    // should destroy the old state and placement-new the new state. If it directly
                     // invokes copy assignment across a state boundary, it causes Undefined Behavior.
                     // This assertion will test exactly how the assignment operator handles lifetimes.
-                    CHECK((result.success_value_or_panic().lastOperation == LifetimeOperation::COPY_ASSIGNMENT ||
-                           result.success_value_or_panic().lastOperation == LifetimeOperation::COPY_CONSTRUCTOR));
+                    CHECK(
+                        (resultMut.success_value_or_panic().lastOperation == LifetimeOperation::COPY_ASSIGNMENT ||
+                         resultMut.success_value_or_panic().lastOperation == LifetimeOperation::COPY_CONSTRUCTOR)
+                    );
                 } else {
-                    CHECK(result.failure_value_or_panic().data == assignData);
-                    
-                    CHECK((result.failure_value_or_panic().lastOperation == LifetimeOperation::COPY_ASSIGNMENT ||
-                           result.failure_value_or_panic().lastOperation == LifetimeOperation::COPY_CONSTRUCTOR));
+                    CHECK(resultMut.failure_value_or_panic().data == assignData);
+
+                    CHECK(
+                        (resultMut.failure_value_or_panic().lastOperation == LifetimeOperation::COPY_ASSIGNMENT ||
+                         resultMut.failure_value_or_panic().lastOperation == LifetimeOperation::COPY_CONSTRUCTOR)
+                    );
                 }
             }
-            
+
             SECTION("Move Assignment") {
-                result = std::move(assignSource);
-                
-                CHECK(result.is_success() == assignFromSuccess);
+                resultMut = std::move(assignSource);
+
+                CHECK(resultMut.is_success() == assignFromSuccess);
                 if (assignFromSuccess) {
-                    CHECK((result.success_value_or_panic().lastOperation == LifetimeOperation::MOVE_ASSIGNMENT ||
-                           result.success_value_or_panic().lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR));
+                    CHECK(
+                        (resultMut.success_value_or_panic().lastOperation == LifetimeOperation::MOVE_ASSIGNMENT ||
+                         resultMut.success_value_or_panic().lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR)
+                    );
                 } else {
-                    CHECK((result.failure_value_or_panic().lastOperation == LifetimeOperation::MOVE_ASSIGNMENT ||
-                           result.failure_value_or_panic().lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR));
+                    CHECK(
+                        (resultMut.failure_value_or_panic().lastOperation == LifetimeOperation::MOVE_ASSIGNMENT ||
+                         resultMut.failure_value_or_panic().lastOperation == LifetimeOperation::MOVE_CONSTRUCTOR)
+                    );
                 }
             }
         }
@@ -265,8 +268,8 @@ TEST_CASE("Result - Exhaustive Suite") {
 }
 
 TEST_CASE("SimpleResult - Basic Checks") {
-    using SimpleRes = pican::SimpleResult<FailureType>; // Result<nullptr_t, FailureType>
-    
+    using SimpleRes = pican::SimpleResult<FailureType>;  // Result<nullptr_t, FailureType>
+
     SECTION("Construct as Failure") {
         FailureType f{"simple_fail"};
         auto res = SimpleRes::failure_by_copy(f);

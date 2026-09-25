@@ -286,6 +286,15 @@ public:  // member functions
     [[nodiscard]]
     const FailureType&
     failure_value_or_panic() const&& = delete;
+
+    [[nodiscard]]
+    FailureType&&
+    failure_value_extract_or_panic() && {
+        if (!this->isSuccess_f) {
+            return std::move(this->failure_f);
+        }
+        pican::panic("Result was success, expected failure");
+    }
 };
 
 template<typename Failure_TP>

@@ -1,5 +1,7 @@
 # TODO
 
+* Our own `Function` implementation, with proper tests for it
+* Our own `Option` type, with proper tests for it, this will be very similar to `Result`
 * Pipe PICAN CMAKE options from CMAKE into the compile options or definitions or whatever
 * Reconsider our stance on modules, we stand to lose a lot and gain little, header only
   will achieve what we want at the slight cost of build times ballooning (which we will use
