@@ -1,15 +1,27 @@
 #pragma once
 
 #include <algorithm>
-#include <new>
+#include <concepts>
+#include <cstddef>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
+#include "pican/core/concepts.hpp"
 #include "pican/core/functions.hpp"
 
 namespace pican {
 template<typename Success_TP, typename Failure_TP>
 class Result {
+    static_assert(
+        std::is_object_v<Success_TP>, "Result success type must be an object type (not a reference, void or function)"
+    );
+    static_assert(!std::is_array_v<Success_TP>, "Result success type must not be an array");
+    static_assert(
+        std::is_object_v<Failure_TP>, "Result failure type must be an object type (not a reference, void or function)"
+    );
+    static_assert(!std::is_array_v<Failure_TP>, "Result failure type must not be an array");
+
 private:  // types
     struct SuccessParameterTag {};
 
@@ -58,61 +70,108 @@ private:  // constructors
         isSuccess_f(false), failure_f(std::forward<Args_TP>(args)...) {
     }
 
-public:  // copy-control
-    Result(const Result& rhs) : isSuccess_f(rhs.isSuccess_f) {
-        if (this->isSuccess_f) {
-            new (&this->success_f) SuccessType(rhs.success_f);
+private:  // lifetime helpers
+    // Constructs, by copy, whichever alternative is alive in rhs into this. This must have no alive alternative when
+    // called (either freshly constructed or just destroyed), and the caller is responsible for isSuccess_f
+    void
+    construct_alive_from(const Result& rhs) {
+        if (rhs.isSuccess_f) {
+            std::construct_at(std::addressof(this->success_f), rhs.success_f);
         } else {
-            new (&this->failure_f) FailureType(rhs.failure_f);
+            std::construct_at(std::addressof(this->failure_f), rhs.failure_f);
         }
     }
 
-    Result(Result&& rhs) : isSuccess_f(rhs.isSuccess_f) {
-        if (this->isSuccess_f) {
-            new (&this->success_f) SuccessType(std::move(rhs.success_f));
+    // Same as above but by move, rhs keeps its alternative alive but in a moved-from state, like std::optional does
+    void
+    construct_alive_from(Result&& rhs) {
+        if (rhs.isSuccess_f) {
+            std::construct_at(std::addressof(this->success_f), std::move(rhs.success_f));
         } else {
-            new (&this->failure_f) FailureType(std::move(rhs.failure_f));
+            std::construct_at(std::addressof(this->failure_f), std::move(rhs.failure_f));
         }
+    }
+
+    // Ends the lifetime of whichever alternative is alive, after this no alternative is alive until one of the
+    // construct_alive_from functions is called
+    void
+    destroy_alive() {
+        if (this->isSuccess_f) {
+            std::destroy_at(std::addressof(this->success_f));
+        } else {
+            std::destroy_at(std::addressof(this->failure_f));
+        }
+    }
+
+public:  // copy-control
+    Result(const Result& rhs)
+        requires AllCopyableOnly<SuccessType, FailureType>
+        : isSuccess_f(rhs.isSuccess_f) {
+        this->construct_alive_from(rhs);
+    }
+
+    Result(
+        Result&& rhs
+    ) noexcept(std::is_nothrow_move_constructible_v<Success_TP> && std::is_nothrow_move_constructible_v<Failure_TP>)
+        requires(std::is_move_constructible_v<Success_TP> && std::is_move_constructible_v<Failure_TP>)
+        : isSuccess_f(rhs.isSuccess_f) {
+        this->construct_alive_from(std::move(rhs));
     }
 
     Result&
     operator=(const Result& rhs) &
-        requires(std::is_copy_assignable_v<Success_TP> && std::is_copy_assignable_v<Failure_TP>)
+        requires AllCopyableOnly<SuccessType, FailureType>
     {
-        if (this == &rhs) {
+        if (this == std::addressof(rhs)) {
             return *this;
         }
-        this->isSuccess_f = rhs.isSuccess_f;
-        if (this->isSuccess_f) {
-            this->success_f = rhs.success_f;
+        if (this->isSuccess_f == rhs.isSuccess_f) {
+            if (this->isSuccess_f) {
+                this->success_f = rhs.success_f;
+            } else {
+                this->failure_f = rhs.failure_f;
+            }
         } else {
-            this->failure_f = rhs.failure_f;
+            // Different alternatives, the member we would assign to is not alive, so end the lifetime of ours and
+            // start the lifetime of theirs, only then does the flag change so it always describes what is alive
+            this->destroy_alive();
+            this->construct_alive_from(rhs);
+            this->isSuccess_f = rhs.isSuccess_f;
         }
         return *this;
     }
 
     Result&
-    operator=(Result&& rhs) &
-        requires(std::is_move_assignable_v<Success_TP> && std::is_move_assignable_v<Failure_TP>)
+    operator=(Result&& rhs) & noexcept(
+        std::is_nothrow_move_constructible_v<Success_TP> && std::is_nothrow_move_constructible_v<Failure_TP> &&
+        std::is_nothrow_move_assignable_v<Success_TP> && std::is_nothrow_move_assignable_v<Failure_TP>
+    )
+        requires(
+            std::is_move_constructible_v<Success_TP> && std::is_move_constructible_v<Failure_TP> &&
+            std::is_move_assignable_v<Success_TP> && std::is_move_assignable_v<Failure_TP>
+        )
     {
-        if (this == &rhs) {
+        if (this == std::addressof(rhs)) {
             return *this;
         }
-        this->isSuccess_f = rhs.isSuccess_f;
-        if (this->isSuccess_f) {
-            this->success_f = std::move(rhs.success_f);
+        if (this->isSuccess_f == rhs.isSuccess_f) {
+            // Same alternative is alive on both sides, so there is a live object on our side to assign to
+            if (this->isSuccess_f) {
+                this->success_f = std::move(rhs.success_f);
+            } else {
+                this->failure_f = std::move(rhs.failure_f);
+            }
         } else {
-            this->failure_f = std::move(rhs.failure_f);
+            // Different alternatives, see the copy assignment operator above
+            this->destroy_alive();
+            this->construct_alive_from(std::move(rhs));
+            this->isSuccess_f = rhs.isSuccess_f;
         }
         return *this;
     }
 
     ~Result() {
-        if (this->isSuccess_f) {
-            this->success_f.~SuccessType();
-        } else {
-            this->failure_f.~FailureType();
-        }
+        this->destroy_alive();
     }
 
 public:  // factory functions
@@ -200,7 +259,7 @@ public:  // member functions
     success_value_or_else(SuccessType&& defaultValue) & = delete;
 
     const SuccessType&
-    success_value_or_else(const SuccessType& defaultValue) && = delete;
+    success_value_or_else(const SuccessType& defaultValue) const&& = delete;
 
     [[nodiscard]]
     const SuccessType&
@@ -259,9 +318,14 @@ public:  // member functions
         }
     }
 
-    [[nodiscard]]
     const FailureType&
-    failure_value_or_else(const FailureType& defaultValue) && = delete;
+    failure_value_or_else(const FailureType&& defaultValue) const& = delete;
+
+    FailureType&
+    failure_value_or_else(FailureType&& defaultValue) & = delete;
+
+    const FailureType&
+    failure_value_or_else(const FailureType& defaultValue) const&& = delete;
 
     [[nodiscard]]
     const FailureType&
@@ -294,8 +358,5 @@ public:  // member functions
         pican::panic("Result was success, expected failure");
     }
 };
-
-template<typename Failure_TP>
-using SimpleResult = Result<nullptr_t, Failure_TP>;
 
 }  // namespace pican

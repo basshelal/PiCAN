@@ -1,5 +1,10 @@
 # TODO
 
+* Study carefully the generated code
+* Make Function be used by everyone like contracts and maybe even stacktrace, this means we need
+  to rethink our structure possibly, we might just have them NOT be libraries? I'm not sure at all!
+* Add `ccache` back to improve build times and related to that, consider having some cpp files
+  per subsystem maybe (which themselves can be _maybe_ CMake libs but that adds some extra complexity)
 * Our own `Function` implementation, with proper tests for it
 * Our own `Option` type, with proper tests for it, this will be very similar to `Result`
 * Pipe PICAN CMAKE options from CMAKE into the compile options or definitions or whatever

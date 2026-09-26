@@ -5,6 +5,7 @@
 #include "pican/core/config.hpp"
 #include "pican/core/log.hpp"
 #include "pican/core/Result.hpp"
+#include "pican/core/Option.hpp"
 #include "pican/core/StringSeparator.hpp"
 #include "pican/core/CopyableAtomic.hpp"
 #include "pican/core/Thread.hpp"
