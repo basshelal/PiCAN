@@ -2,7 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-import pican.core;
+#include "pican/core/core.hpp"
 
 using pican::TypeDef;
 using ValueType = uint64_t;

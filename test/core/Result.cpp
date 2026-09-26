@@ -2,8 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
-import pican.test_utils;
-import pican.core;
+#include "test/utils/test_utils.hpp"
+#include "pican/core/core.hpp"
 
 using pican::Result;
 using pican::ScopeGuard;

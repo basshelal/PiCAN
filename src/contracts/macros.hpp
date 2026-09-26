@@ -1,7 +1,7 @@
 #pragma once
 
 // Convenience Macros for pican::dbc contracts
-// Note: You must `import dbc;` in any source file that uses these macros.
+// Note: You must `#include "contracts/Contracts.hpp"` in any source file that uses these macros.
 
 #define PICAN_DBC_CONCAT_IMPL(x, y) x##y
 #define PICAN_DBC_CONCAT(x, y) PICAN_DBC_CONCAT_IMPL(x, y)

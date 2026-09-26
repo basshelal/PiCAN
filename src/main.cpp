@@ -1,11 +1,11 @@
 #include <csignal>
 #include <cstring>
 
-import heap;
-import contracts;
-import stacktrace;
-import pican.core;
-import pican.mem;
+#include "heap/Heap.hpp"
+#include "contracts/Contracts.hpp"
+#include "stacktrace/Stacktrace.hpp"
+#include "pican/core/core.hpp"
+#include "pican/mem/mem.hpp"
 
 extern "C" void
 cleanup_by_signal(int signal);

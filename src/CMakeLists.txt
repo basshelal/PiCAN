@@ -20,6 +20,17 @@ target_link_options(${MAIN_EXECUTABLE} PRIVATE
         "--gc-sections"
 )
 
+# Header-only code is only compiled when something includes it, so a header that nothing includes yet could silently
+# rot. VERIFY_INTERFACE_HEADER_SETS (set on each library) generates a target that compiles every header on its own,
+# which also checks that each header is self-contained (includes everything it needs).
+# Building the app (or the tests) builds these too.
+add_dependencies(${MAIN_EXECUTABLE}
+        stacktrace_verify_interface_header_sets
+        contracts_verify_interface_header_sets
+        heap_verify_interface_header_sets
+        pican_verify_interface_header_sets
+)
+
 install(TARGETS ${MAIN_EXECUTABLE}
         RUNTIME DESTINATION bin
 )

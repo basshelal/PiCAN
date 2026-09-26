@@ -2,9 +2,10 @@
 
 #include <catch2/catch_all.hpp>
 
-import stacktrace;
-import heap;
-import fmt;
+#include <fmt/format.h>
+
+#include "stacktrace/Stacktrace.hpp"
+#include "heap/Heap.hpp"
 
 TEST_CASE("Stacktrace") {
     SECTION("Get stacktrace") {

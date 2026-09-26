@@ -1,6 +1,6 @@
 #include "catch2/catch_all.hpp"
 
-import pican.test_utils;
+#include "test/utils/test_utils.hpp"
 
 using pican::test_utils::LifetimeOperation;
 using Tracked = pican::test_utils::Tracked<std::string>;

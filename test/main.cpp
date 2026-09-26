@@ -2,9 +2,9 @@
 
 #include <catch2/catch_session.hpp>
 
-import pican.mem;
-import heap;
-import stacktrace;
+#include "pican/mem/mem.hpp"
+#include "heap/Heap.hpp"
+#include "stacktrace/Stacktrace.hpp"
 
 namespace {
 void

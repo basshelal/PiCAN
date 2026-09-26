@@ -54,7 +54,8 @@ add_compile_options(-Wall -Werror -pedantic -Wno-interference-size -Wno-attribut
 # CPM for package/dependency management, see: https://github.com/cpm-cmake/CPM.cmake
 include(cmake/CPM.cmake)
 
-set(FMT_MODULE ON CACHE BOOL "Build the fmt module" FORCE)
+# Forced OFF so that build directories configured back when we used C++ modules drop their cached ON value
+set(FMT_MODULE OFF CACHE BOOL "Build the fmt module" FORCE)
 # fmt: String formatting
 CPMAddPackage(
         NAME fmt
