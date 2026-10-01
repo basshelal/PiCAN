@@ -14,6 +14,9 @@
 
 namespace pican {
 
+constexpr SizeBytes SMALL_FUNCTION_CAPACITY = sizeof(Address);
+constexpr SizeBytes DEFAULT_FUNCTION_CAPACITY = 2 * sizeof(Address);
+
 // A heapless replacement for std::function: holds any callable (lambda with or without captures, function pointer,
 // member function pointer, functor object) with a given call signature, inside a fixed size buffer that lives
 // directly inside the Function object itself. It never allocates.
@@ -91,14 +94,14 @@ namespace pican {
 // Declared but never defined, only the specialization below for function types exists. This is the standard trick for
 // taking a signature like int(int, int) as one template parameter and then pulling it apart into its return type and
 // argument types. Function<int, 32> (a non function type) matches only this primary template and so is an error
-template<typename Signature_TP, pican::SizeBytes Capacity_V>
+template<typename Signature_TP, SizeBytes Capacity_V = DEFAULT_FUNCTION_CAPACITY>
 class Function;
 
 // The partial specialization for function types, Return_TP(Args_TP...) is pattern matched against the signature, so
 // for Function<int(float, char), 32>, Return_TP = int and Args_TP = {float, char}. The order of this template's own
 // parameters doesn't have to match the primary template's, they're only names for the pattern's pieces, Capacity_V is
 // first only so that the pack Args_TP comes last, which keeps it readable
-template<pican::SizeBytes Capacity_V, typename Return_TP, typename... Args_TP>
+template<SizeBytes Capacity_V, typename Return_TP, typename... Args_TP>
 class Function<Return_TP(Args_TP...), Capacity_V> {
 private:  // static assertions
     // A zero sized array isn't valid C++, and nothing useful fits in zero bytes anyway
@@ -109,12 +112,12 @@ public:  // types
 
 public:  // constants
     // Size of the internal buffer in bytes, the largest callable that can be stored
-    static constexpr pican::SizeBytes CAPACITY = Capacity_V;
+    static constexpr SizeBytes CAPACITY = Capacity_V;
 
     // Alignment of the internal buffer, the largest alignment that a callable can require. alignof(std::max_align_t)
     // is the alignment of the most aligned fundamental type (16 on x86-64 and aarch64), which is what malloc
     // guarantees too, so any ordinary type fits. Only types explicitly declared with a larger alignas are rejected
-    static constexpr pican::Alignment ALIGNMENT = alignof(std::max_align_t);
+    static constexpr Alignment ALIGNMENT = alignof(std::max_align_t);
 
 private:  // types
     // Type of the function that calls the stored callable. The storage is passed as void* because this type must not
@@ -174,7 +177,7 @@ private:  // static functions
     // from making assumptions that would be wrong here
     template<typename Callable_TP>
     static Callable_TP*
-    stored_callable(void* storage) {
+    get_stored_callable(void* storage) {
         return std::launder(static_cast<Callable_TP*>(storage));
     }
 
@@ -187,7 +190,7 @@ private:  // static functions
     template<typename Callable_TP>
     static Return_TP
     invoke_stored(void* storage, Args_TP&&... args) {
-        Callable_TP& callable = *stored_callable<Callable_TP>(storage);
+        Callable_TP& callable = *(Function::get_stored_callable<Callable_TP>(storage));
         return std::invoke_r<Return_TP>(callable, std::forward<Args_TP>(args)...);
     }
 
@@ -200,34 +203,33 @@ private:  // static functions
         pican::panic("Called an empty pican::Function");
     }
 
-    // Copies, moves or destroys the Callable_TP stored in source/destination, see ManageOperation. Only used for
-    // callables that are not trivially copyable or not trivially destructible, the others need none of this.
-    //
-    // noexcept because ManageFunction requires it. The copy constructor of a callable is allowed to throw, and if one
-    // did here, std::terminate would be called. This codebase is built with -fno-exceptions, so that cannot happen
     template<typename Callable_TP>
     static void
     manage_stored(ManageOperation operation, void* destination, void* source) noexcept {
         switch (operation) {
             case ManageOperation::COPY: {
-                // destination holds no object yet, so it's cast directly rather than laundered, construct_at is what
-                // begins the new object's lifetime there
-                // std::as_const so that the copy constructor is chosen even if Callable_TP has a greedy template
-                // constructor that would be a better match for a non-const lvalue
-                std::construct_at(static_cast<Callable_TP*>(destination),
-                                  std::as_const(*stored_callable<Callable_TP>(source)));
-                return;
+                Callable_TP* const destinationAddress = static_cast<Callable_TP*>(destination);
+                const Callable_TP* sourceAddress = Function::get_stored_callable<Callable_TP>(source);
+
+                // Cast to const reference to force the copy constructor being called
+                const Callable_TP& sourceRef = std::as_const(*sourceAddress);
+                std::construct_at(destinationAddress, sourceRef);
+                break;
             }
             case ManageOperation::MOVE: {
-                Callable_TP* const sourceCallable = stored_callable<Callable_TP>(source);
-                std::construct_at(static_cast<Callable_TP*>(destination), std::move(*sourceCallable));
-                // A moved-from object is still alive and must still be destroyed, the move doesn't end its lifetime
-                std::destroy_at(sourceCallable);
-                return;
+                Callable_TP* const destinationAddress = static_cast<Callable_TP*>(destination);
+                Callable_TP* const sourceAddress = Function::get_stored_callable<Callable_TP>(source);
+                // Calls the move constructor
+                std::construct_at(destinationAddress, std::move(*sourceAddress));
+
+                // must call the source's destructor
+                std::destroy_at(sourceAddress);
+                break;
             }
             case ManageOperation::DESTROY: {
-                std::destroy_at(stored_callable<Callable_TP>(destination));
-                return;
+                Callable_TP* const destinationAddress = static_cast<Callable_TP*>(destination);
+                std::destroy_at(destinationAddress);
+                break;
             }
         }
     }
@@ -241,7 +243,7 @@ private:  // static functions
 public:  // constructors
     // An empty Function, calling it panics. Default constructible, unlike Result and Option, because an empty Function
     // is a normal state for, say, a callback member that hasn't been set yet
-    Function() : invoke_f(&invoke_empty), manage_f(nullptr) {
+    Function() : invoke_f{&invoke_empty}, manage_f{nullptr}, storage_f{} {
     }
 
     // Stores any callable that can be called with Args_TP... and gives something convertible to Return_TP.
@@ -265,7 +267,7 @@ public:  // constructors
     // Function without being wrapped by hand. This is safe because a callable that doesn't fit is a compile error.
     template<typename Callable_TP>
         requires(!std::is_same_v<std::remove_cvref_t<Callable_TP>, Function>) &&
-                (std::is_invocable_r_v<Return_TP, std::decay_t<Callable_TP>&, Args_TP...>)
+                    (std::is_invocable_r_v<Return_TP, std::decay_t<Callable_TP>&, Args_TP...>)
     Function(Callable_TP&& callable) : invoke_f(&invoke_empty), manage_f(nullptr) {
         this->store(std::forward<Callable_TP>(callable));
     }
@@ -286,11 +288,8 @@ public:  // copy-control
         this->move_storage_from(rhs);
     }
 
-    // Copy assignment, whatever we held is destroyed first, then we copy rhs's callable
     Function&
     operator=(const Function& rhs) & {
-        // Self assignment check is required here, not just an optimization: without it reset() would destroy the very
-        // callable we're about to copy from
         if (this == std::addressof(rhs)) {
             return *this;
         }
@@ -301,7 +300,6 @@ public:  // copy-control
         return *this;
     }
 
-    // Move assignment, whatever we held is destroyed first, then rhs's callable moves into us and rhs becomes empty
     Function&
     operator=(Function&& rhs) & noexcept {
         if (this == std::addressof(rhs)) {
@@ -347,13 +345,18 @@ private:  // member functions
         // "is this a callable of the right signature?", which should just remove this overload. "It's the right kind
         // of callable but too big" is a mistake the programmer needs to hear about with a clear message. Clang and
         // recent GCC also print the evaluated sizes when one of these fails
-        static_assert(sizeof(Stored_TP) <= CAPACITY,
-                      "Callable is too large for this Function's capacity, increase the capacity or capture less");
+        static_assert(
+            sizeof(Stored_TP) <= CAPACITY,
+            "Callable is too large for this Function's capacity, increase the capacity or capture less"
+        );
         static_assert(alignof(Stored_TP) <= ALIGNMENT, "Callable is over-aligned for this Function's buffer");
-        static_assert(std::is_copy_constructible_v<Stored_TP>,
-                      "Callable must be copy constructible because Function is copyable");
-        static_assert(std::is_nothrow_move_constructible_v<Stored_TP>,
-                      "Callable must be nothrow move constructible so that Function's move can be noexcept");
+        static_assert(
+            std::is_copy_constructible_v<Stored_TP>, "Callable must be copy constructible because Function is copyable"
+        );
+        static_assert(
+            std::is_nothrow_move_constructible_v<Stored_TP>,
+            "Callable must be nothrow move constructible so that Function's move can be noexcept"
+        );
 
         // A null function pointer or null member function pointer is stored as an empty Function, the same as
         // std::function does, so calling it panics clearly instead of jumping to address 0. The check is on the type
@@ -420,12 +423,17 @@ public:  // member functions
         return this->invoke_f(this->storage_f, std::forward<Args_TP>(args)...);
     }
 
+    Return_TP
+    invoke(Args_TP... args) const {
+        return this->invoke_f(this->storage_f, std::forward<Args_TP>(args)...);
+    }
+
     // Whether no callable is stored, true for a default constructed Function, a moved-from one, a reset one, or one
     // constructed from a null function pointer
     [[nodiscard]]
     bool
     is_empty() const {
-        return this->invoke_f == &invoke_empty;
+        return this->invoke_f == &Function::invoke_empty;
     }
 
     // Destroys the stored callable, if any, and makes this empty
@@ -434,7 +442,7 @@ public:  // member functions
         if (this->manage_f != nullptr) {
             this->manage_f(ManageOperation::DESTROY, this->storage_f, nullptr);
         }
-        this->invoke_f = &invoke_empty;
+        this->invoke_f = &Function::invoke_empty;
         this->manage_f = nullptr;
     }
 };
